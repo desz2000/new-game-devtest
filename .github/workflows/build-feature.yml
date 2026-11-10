@@ -1,0 +1,49 @@
+name: Build Jogo Windows (.exe)
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+
+jobs:
+  build-windows:
+    name: Compilar Windows 64-bit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache da Library da Unity
+        uses: actions/cache@v4
+        with:
+          path: My project/Library
+          key: Library-StandaloneWindows64-${{ hashFiles('My project/Assets/**', 'My project/Packages/**', 'My project/ProjectSettings/**') }}
+          restore-keys: |
+            Library-StandaloneWindows64-
+
+      - name: Compilar jogo na Unity
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: My project
+          targetPlatform: StandaloneWindows64
+          buildName: MeuJogo2D
+          buildsPath: build
+
+      - name: Upload do Executável (Artifact)
+        id: upload-exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: MeuJogo2D-Windows-${{ github.ref_name }}
+          path: build/StandaloneWindows64/
+          retention-days: 14
+
+      - name: Exibir Link de Download no Resumo
+        run: |
+          echo "### 🎮 Build concluída com sucesso!" >> $GITHUB_STEP_SUMMARY
+          echo "👉 **[Clique aqui para baixar o jogo (.zip com o .exe)](${{ steps.upload-exe.outputs.artifact-url }})**" >> $GITHUB_STEP_SUMMARY
