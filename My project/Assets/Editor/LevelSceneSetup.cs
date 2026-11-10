@@ -16,7 +16,8 @@ public static class LevelSceneSetup
         if (EditorApplication.isPlayingOrWillChangePlaymode) return;
 
         BoxPlayer2D existingPlayer = Object.FindObjectOfType<BoxPlayer2D>();
-        if (existingPlayer == null)
+        ParallaxBackdrop2D existingBackdrop = Object.FindObjectOfType<ParallaxBackdrop2D>();
+        if (existingPlayer == null || existingBackdrop == null)
         {
             BuildAndSaveScene();
         }
@@ -32,10 +33,28 @@ public static class LevelSceneSetup
     [MenuItem("GameDev/Construir ou Resetar Fase 2D")]
     public static void BuildAndSaveScene()
     {
+        var activeScene = EditorSceneManager.GetActiveScene();
+        if (string.IsNullOrEmpty(activeScene.path))
+        {
+            const string defaultScenePath = "Assets/Scenes/SampleScene.unity";
+            if (System.IO.File.Exists(defaultScenePath))
+            {
+                activeScene = EditorSceneManager.OpenScene(defaultScenePath, OpenSceneMode.Single);
+            }
+        }
+
         LevelBuilder2D.BuildScene();
-        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-        EditorSceneManager.SaveOpenScenes();
-        Debug.Log("[GameDev] Fase 2D com o Boneco Pixel Art e obstáculos atualizada com sucesso!");
+        activeScene = EditorSceneManager.GetActiveScene();
+        EditorSceneManager.MarkSceneDirty(activeScene);
+        if (!string.IsNullOrEmpty(activeScene.path))
+        {
+            EditorSceneManager.SaveScene(activeScene);
+        }
+        else
+        {
+            EditorSceneManager.SaveOpenScenes();
+        }
+        Debug.Log("[GameDev] Fase 2D Duck Souls x Celeste 32x32 atualizada com sucesso!");
     }
 }
 #endif
