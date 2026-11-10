@@ -34,16 +34,18 @@ jobs:
           targetPlatform: StandaloneWindows64
           buildName: MeuJogo2D
           buildsPath: build
+          versioning: Semantic
+          version: 0.0.${{ github.run_number }}
 
       - name: Upload do Executável (Artifact)
         id: upload-exe
         uses: actions/upload-artifact@v4
         with:
-          name: MeuJogo2D-Windows-${{ github.ref_name }}
+          name: MeuJogo2D-Windows-v0.0.${{ github.run_number }}
           path: build/StandaloneWindows64/
           retention-days: 14
 
       - name: Exibir Link de Download no Resumo
         run: |
-          echo "### 🎮 Build concluída com sucesso!" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎮 Build v0.0.${{ github.run_number }} concluída com sucesso!" >> $GITHUB_STEP_SUMMARY
           echo "👉 **[Clique aqui para baixar o jogo (.zip com o .exe)](${{ steps.upload-exe.outputs.artifact-url }})**" >> $GITHUB_STEP_SUMMARY
