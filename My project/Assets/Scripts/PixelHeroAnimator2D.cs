@@ -16,16 +16,17 @@ public class PixelHeroAnimator2D : MonoBehaviour
 
     private SpriteRenderer spriteRenderer;
 
-    private Sprite[] boyIdleSprites;
-    private Sprite[] boyWalkSprites;
-    private Sprite boyJumpSprite;
-    private Sprite boyShootSprite;
-    private Sprite[] boyStompSprites;
+    private static Sprite[] boyIdleSprites;
+    private static Sprite[] boyWalkSprites;
+    private static Sprite boyJumpSprite;
+    private static Sprite boyShootSprite;
+    private static Sprite[] boyStompSprites;
 
-    private Sprite[] kittyIdleSprites;
-    private Sprite[] kittyWalkSprites;
-    private Sprite kittyJumpSprite;
-    private Sprite[] kittyScratchSprites;
+    private static Sprite[] kittyIdleSprites;
+    private static Sprite[] kittyWalkSprites;
+    private static Sprite kittyJumpSprite;
+    private static Sprite[] kittyScratchSprites;
+    private static bool heroSpritesReady;
 
     private static Texture2D cachedBoyPreviewTex;
     private static Texture2D cachedKittyPreviewTex;
@@ -52,710 +53,6 @@ public class PixelHeroAnimator2D : MonoBehaviour
     private const float ScratchAnimDuration = 0.24f;
     private const float StompEffectDuration = 0.28f;
 
-    // ================== SPRITES 32x32 DO BONECO MENINO (CAMISETA AMARELA + PISTOLA LASER) ==================
-    // Legenda:
-    // . = Transparente | O = Contorno escuro
-    // H/h/l = Cabelo castanho (base/sombra/luz)
-    // S/s/P = Pele (base/sombra/rubor) | W/E = Olho branco / pupila
-    // Y/y/U = Camiseta amarela (base/sombra/brilho)
-    // B/b/c = Calça jeans azul (base/sombra/brilho) | D/M = Cinto / fivela
-    // K/k = Botas escuras/sola
-    // G/g/L/C = Pistola Laser (metal claro/escuro/ciano brilhante/núcleo branco-ciano)
-
-    private static readonly string[] BoyIdle1Grid =
-    {
-        "..........OOOOOOOOOO............",
-        "........OOllHHHHHHhhOO..........",
-        ".......OllHHHHHHHHHhhhO.........",
-        "......OlHHHHHHHHHHHHhhhO........",
-        ".....OHHhhHHHHHHHHHHhhhhO.......",
-        ".....OHhOOHHSSSSSShHOhhHO.......",
-        "....OHhOSSSSSSSSSSSSsOOhHO......",
-        "....OHOSSSSSWESSSSWESsOHO.......",
-        ".....OSSSSSSWEsSSSWESsOO........",
-        ".....OSSSSSPSSSSSSPSSsO.........",
-        "......OSSSSSSSSSSSSsOO..........",
-        ".......OOSSSSSSSSsOO............",
-        ".......OOYYYYYYYYOO.............",
-        "......OOUYYYYYYYYYyOO...........",
-        ".....OOUYYYYYYYYYYyyO.OOOOOO....",
-        "....OOYyyyyYYYYYYyyOOGGGGGGGGO..",
-        "....OSSOYYyYYYYYYyOOGGGLLCCCLLO.",
-        "....OSSOOOOYYYYYYyOOGgGGGGGGGO..",
-        ".....OO...OYYYYYYyOOgGOOOOOOO...",
-        "..........ODDDDDMDOOO...........",
-        "..........OBBBBBBBBO............",
-        ".........OBBcBBBBbBBO...........",
-        ".........OBBcBBBBbBBO...........",
-        ".........OBBBBOOOBBBO...........",
-        ".........OBBbO..OBbBO...........",
-        ".........OBBbO..OBbBO...........",
-        ".........OBBbO..OBbBO...........",
-        ".........OBbBO..OBbBO...........",
-        "........OKKKKO..OKKKKO..........",
-        "........OKkkKO..OKkkKO..........",
-        "........OOOOOO..OOOOOO..........",
-        "................................"
-    };
-
-    private static readonly string[] BoyIdle2Grid =
-    {
-        "................................",
-        "..........OOOOOOOOOO............",
-        "........OOllHHHHHHhhOO..........",
-        ".......OllHHHHHHHHHhhhO.........",
-        "......OlHHHHHHHHHHHHhhhO........",
-        ".....OHHhhHHHHHHHHHHhhhhO.......",
-        ".....OHhOOHHSSSSSShHOhhHO.......",
-        "....OHhOSSSSSSSSSSSSsOOhHO......",
-        "....OHOSSSSSWESSSSWESsOHO.......",
-        ".....OSSSSSSWEsSSSWESsOO........",
-        ".....OSSSSSPSSSSSSPSSsO.........",
-        "......OSSSSSSSSSSSSsOO..........",
-        ".......OOSSSSSSSSsOO............",
-        ".......OOYYYYYYYYOO.............",
-        "......OOUYYYYYYYYYyOO.OOOOOO....",
-        ".....OOUYYYYYYYYYYyyOGGGGGGGGO..",
-        "....OOYyyyyYYYYYYyyOOGGLLLCLLLO.",
-        "....OSSOYYyYYYYYYyOOGgGGGGGGGO..",
-        ".....OO.OOOYYYYYYyOOgGOOOOOOO...",
-        "..........ODDDDDMDOOO...........",
-        "..........OBBBBBBBBO............",
-        ".........OBBcBBBBbBBO...........",
-        ".........OBBcBBBBbBBO...........",
-        ".........OBBBBOOOBBBO...........",
-        ".........OBBbO..OBbBO...........",
-        ".........OBBbO..OBbBO...........",
-        ".........OBBbO..OBbBO...........",
-        ".........OBbBO..OBbBO...........",
-        "........OKKKKO..OKKKKO..........",
-        "........OKkkKO..OKkkKO..........",
-        "........OOOOOO..OOOOOO..........",
-        "................................"
-    };
-
-    private static readonly string[] BoyWalk1Grid =
-    {
-        "..........OOOOOOOOOO............",
-        "........OOllHHHHHHhhOO..........",
-        ".......OllHHHHHHHHHhhhO.........",
-        "......OlHHHHHHHHHHHHhhhO........",
-        ".....OHHhhHHHHHHHHHHhhhhO.......",
-        ".....OHhOOHHSSSSSShHOhhHO.......",
-        "....OHhOSSSSSSSSSSSSsOOhHO......",
-        "....OHOSSSSSWESSSSWESsOHO.......",
-        ".....OSSSSSSWEsSSSWESsOO........",
-        ".....OSSSSSPSSSSSSPSSsO.........",
-        "......OSSSSSSSSSSSSsOO..........",
-        ".......OOSSSSSSSSsOO............",
-        "......OOOYYYYYYYYOO.............",
-        ".....OOUUYYYYYYYYYyOO...........",
-        "....OOUYYYYYYYYYYYyyO.OOOOOO....",
-        "...OSSOyyyyYYYYYYyyOOGGGGGGGGO..",
-        "...OSSOOYYyYYYYYYyOOGGGLLCCCLLO.",
-        "....OO..OOOYYYYYYyOOGgGGGGGGGO..",
-        "..........OYYYYYYyOOgGOOOOOOO...",
-        "..........ODDDDDMDOOO...........",
-        ".........OOBBBBBBBBBO...........",
-        "........OBBcBBBBBBbBBO..........",
-        ".......OBBcBBOOOOBBbBBO.........",
-        "......OBBbBO.....OBBbBO.........",
-        ".....OBBbBO.......OBBbBO........",
-        ".....OBbBO.........OBbBO........",
-        "....OKKKKO.........OKKKKO.......",
-        "....OKkkKO.........OKkkKO.......",
-        "....OOOOOO.........OOOOOO.......",
-        "................................",
-        "................................",
-        "................................"
-    };
-
-    private static readonly string[] BoyWalk2Grid =
-    {
-        "................................",
-        "..........OOOOOOOOOO............",
-        "........OOllHHHHHHhhOO..........",
-        ".......OllHHHHHHHHHhhhO.........",
-        "......OlHHHHHHHHHHHHhhhO........",
-        ".....OHHhhHHHHHHHHHHhhhhO.......",
-        ".....OHhOOHHSSSSSShHOhhHO.......",
-        "....OHhOSSSSSSSSSSSSsOOhHO......",
-        "....OHOSSSSSWESSSSWESsOHO.......",
-        ".....OSSSSSSWEsSSSWESsOO........",
-        ".....OSSSSSPSSSSSSPSSsO.........",
-        "......OSSSSSSSSSSSSsOO..........",
-        ".......OOSSSSSSSSsOO............",
-        ".......OOYYYYYYYYOO.............",
-        "......OOUYYYYYYYYYyOO.OOOOOO....",
-        ".....OOUYYYYYYYYYYyyOGGGGGGGGO..",
-        ".....OOyyyyYYYYYYyyOOGGLLCCCLLO.",
-        "......OSSOYYYYYYYyOOGgGGGGGGGO..",
-        ".......OO.OYYYYYYyOOgGOOOOOOO...",
-        "..........ODDDDDMDOOO...........",
-        "..........OBBBBBBBBO............",
-        ".........OBBBBBBBbBBO...........",
-        ".........OBBcBBBOBbBO...........",
-        "..........OBBbBOOBbBO...........",
-        "..........OBBbBO.OBbBO..........",
-        "..........OBbBO..OBbBO..........",
-        ".........OKKKKO..OBbBO..........",
-        ".........OKkkKO.OKKKKO..........",
-        ".........OOOOOO.OKkkKO..........",
-        "................OOOOOO..........",
-        "................................",
-        "................................"
-    };
-
-    private static readonly string[] BoyWalk3Grid =
-    {
-        "..........OOOOOOOOOO............",
-        "........OOllHHHHHHhhOO..........",
-        ".......OllHHHHHHHHHhhhO.........",
-        "......OlHHHHHHHHHHHHhhhO........",
-        ".....OHHhhHHHHHHHHHHhhhhO.......",
-        ".....OHhOOHHSSSSSShHOhhHO.......",
-        "....OHhOSSSSSSSSSSSSsOOhHO......",
-        "....OHOSSSSSWESSSSWESsOHO.......",
-        ".....OSSSSSSWEsSSSWESsOO........",
-        ".....OSSSSSPSSSSSSPSSsO.........",
-        "......OSSSSSSSSSSSSsOO..........",
-        ".......OOSSSSSSSSsOO............",
-        ".......OOYYYYYYYYOO.............",
-        "......OOUYYYYYYYYYyOO...........",
-        ".....OOUYYYYYYYYYYyyO..OOOOOO...",
-        ".....OOyyyyYYYYYYyyOOOGGGGGGGGO.",
-        "......OOYYyYYYYYYyOOOGGLLCCCLLO.",
-        ".......OSSOYYYYYYyOOOGgGGGGGGGO.",
-        "........OO.OYYYYYyOO.gGOOOOOOO..",
-        "..........ODDDDDMDOOO...........",
-        ".........OOBBBBBBBBBO...........",
-        "........OBBbBBBBBBcBBO..........",
-        ".......OBBbBBOOOOBBcBBO.........",
-        "......OBBbBO.....OBBbBO.........",
-        ".....OBbBBO.......OBBbBO........",
-        ".....OBbBO.........OBbBO........",
-        "....OKKKKO.........OKKKKO.......",
-        "....OKkkKO.........OKkkKO.......",
-        "....OOOOOO.........OOOOOO.......",
-        "................................",
-        "................................",
-        "................................"
-    };
-
-    private static readonly string[] BoyJumpGrid =
-    {
-        "....OO....OOOOOOOOOO............",
-        "...OSSO.OOllHHHHHHhhOO..........",
-        "...OSSOOllHHHHHHHHHhhhO.........",
-        "....OYYOlHHHHHHHHHHHHhhhO.......",
-        "....OYYOHHhhHHHHHHHHHHhhhhO.....",
-        ".....OYOHhOOHHSSSSSShHOhhHO.....",
-        ".....OOOHhOSSSSSSSSSSSSsOOhHO...",
-        "......OOHOSSSSSWESSSSWESsOHO....",
-        ".......OSSSSSSWEsSSSWESsOO......",
-        ".......OSSSSSPSSSSSSPSSsO.......",
-        "........OSSSSSSSSSSSSsOO........",
-        ".........OOSSSSSSSSsOO..........",
-        ".........OOYYYYYYYYOO...........",
-        "........OOUYYYYYYYYYyOO.OOOOOO..",
-        ".......OOUYYYYYYYYYYyyOGGGGGGGGO",
-        ".......OOyyyyYYYYYYyyOOGGLLCCCLL",
-        "........OOYYyYYYYYYyOOGgGGGGGGGO",
-        "..........OYYYYYYYYyOOgGOOOOOOO.",
-        "..........ODDDDDMDOOO...........",
-        ".........OOBBBBBBBBBO...........",
-        "........OBBcBBBBBBbBBO..........",
-        ".......OBBcBBOOOOBBbBBO.........",
-        "......OBBbBO.....OBBbBBO........",
-        ".....OKKKKO.......OBBbBO........",
-        ".....OKkkKO......OKKKKO.........",
-        ".....OOOOOO......OKkkKO.........",
-        ".................OOOOOO.........",
-        "................................",
-        "................................",
-        "................................",
-        "................................",
-        "................................"
-    };
-
-    private static readonly string[] BoyShootGrid =
-    {
-        "..........OOOOOOOOOO............",
-        "........OOllHHHHHHhhOO..........",
-        ".......OllHHHHHHHHHhhhO.........",
-        "......OlHHHHHHHHHHHHhhhO........",
-        ".....OHHhhHHHHHHHHHHhhhhO.......",
-        ".....OHhOOHHSSSSSShHOhhHO.......",
-        "....OHhOSSSSSSSSSSSSsOOhHO......",
-        "....OHOSSSSSWESSSSWESsOHO.......",
-        ".....OSSSSSSWEsSSSWESsOO........",
-        ".....OSSSSSPSSSSSSPSSsO.........",
-        "......OSSSSSSSSSSSSsOO..........",
-        ".......OOSSSSSSSSsOO............",
-        ".......OOYYYYYYYYOO.............",
-        "......OOUYYYYYYYYYyOO..OOOOOO...",
-        ".....OOUYYYYYYYYYYyyO.OGGGGGGGGO",
-        "....OOYyyyyYYYYYYyyOOOGGLLCCCCLC",
-        "....OSSOYYyYYYYYYyOOOGGGGGCCCCLC",
-        ".....OO.OOOYYYYYYyOOOGgGGGGGGGO.",
-        "..........OYYYYYYyOO.gGOOOOOOO..",
-        "..........ODDDDDMDOOO...........",
-        "..........OBBBBBBBBO............",
-        ".........OBBcBBBBbBBO...........",
-        ".........OBBcBBBBbBBO...........",
-        ".........OBBBBOOOBBBO...........",
-        ".........OBBbO..OBbBO...........",
-        ".........OBBbO..OBbBO...........",
-        ".........OBBbO..OBbBO...........",
-        ".........OBbBO..OBbBO...........",
-        "........OKKKKO..OKKKKO..........",
-        "........OKkkKO..OKkkKO..........",
-        "........OOOOOO..OOOOOO..........",
-        "................................"
-    };
-
-    // ================== SPRITES 32x32 DA BONECA MENINA (ESTILO HELLO KITTY) ==================
-    // Legenda adicional:
-    // W/w/q = Pelagem branca (pura / sombra fria / sombra profunda)
-    // R/r/a = Laço vermelho-rubi (base / sombra / brilho)
-    // N/n = Nariz & botões dourados
-    // P/p = Blusinha rosa / rubor
-    // E = Olhos ovais escuros | O = Contorno / bigodes
-
-    private static readonly string[] KittyIdle1Grid =
-    {
-        "....OOO...............OOO.......",
-        "...OWWWO.............OrrRO......",
-        "..OWWWWWO...........OrRRaRO.....",
-        "..OWwWWwO..OOOOOOO..ORRRrRO.....",
-        ".OWWWWWwOOOqqqqqqqOORRrrRRRO....",
-        ".OWWWWWWWWWWWWWWWWOORRRrRRRRO...",
-        ".OWWWWWWWWWWWWWWWWOORRrRRRrRO...",
-        "OWWWWWWWWWWWWWWWWWWOOOrRRrOO....",
-        "OWWWWWWWWWWWWWWWWWWWWWOOOO......",
-        "OWWWWWWEWWWWWWWWWEWWWWWWwO......",
-        "OOOWWWWEWWWWWWWWWEWWWWwOOO......",
-        "OWWWWWWEWWWWNNWWWEWWWWWWwO......",
-        "OOOWWWWwWWWWnnWWWWWWWWwOOO......",
-        ".OOWWWWPWWWWWWWWWWPWWWwOO.......",
-        "..OWWWWwWWWWWWWWWWWWWwOO........",
-        "...OOwwwwWWWWWWWWwwwOOO.........",
-        "....OOOOOOOOOOOOOOOOO...........",
-        ".....OOpPPPPPPPPPPpOO...........",
-        "....OWOpPPBBBBBBPPpOWO..........",
-        "...OWWwOBNBBBBBBBNBOwWO.........",
-        "...OWwOOBBBBBBBBBBBBOwWO........",
-        "....OO.OBBcBBBBBBbBBOOO.........",
-        ".......OBBcBBBBBBbBBO...........",
-        ".......OBBBBBBBBBBBBO...........",
-        ".......OBBBBBOOOBBBBO...........",
-        ".......OBBbBO..OBbBBO...........",
-        ".......OBbBBO..OBbBBO...........",
-        ".......OWWWWO..OWWWWO...........",
-        ".......OwwwWO..OwwwWO...........",
-        ".......OKKKKO..OKKKKO...........",
-        ".......OOOOOO..OOOOOO...........",
-        "................................"
-    };
-
-    private static readonly string[] KittyIdle2Grid =
-    {
-        "................................",
-        "....OOO...............OOO.......",
-        "...OWWWO.............OrrRO......",
-        "..OWWWWWO...........OrRRaRO.....",
-        "..OWwWWwO..OOOOOOO..ORRRrRO.....",
-        ".OWWWWWwOOOqqqqqqqOORRrrRRRO....",
-        ".OWWWWWWWWWWWWWWWWOORRRrRRRRO...",
-        ".OWWWWWWWWWWWWWWWWOORRrRRRrRO...",
-        "OWWWWWWWWWWWWWWWWWWOOOrRRrOO....",
-        "OWWWWWWWWWWWWWWWWWWWWWOOOO......",
-        "OWWWWWWEWWWWWWWWWEWWWWWWwO......",
-        "OOOWWWWEWWWWWWWWWEWWWWwOOO......",
-        "OWWWWWWEWWWWNNWWWEWWWWWWwO......",
-        "OOOWWWWwWWWWnnWWWWWWWWwOOO......",
-        ".OOWWWWPWWWWWWWWWWPWWWwOO.......",
-        "..OWWWWwWWWWWWWWWWWWWwOO........",
-        "...OOwwwwWWWWWWWWwwwOOO.........",
-        "....OOOOOOOOOOOOOOOOO...........",
-        ".....OOpPPPPPPPPPPpOO...........",
-        "....OWOpPPBBBBBBPPpOWO..........",
-        "...OWWwOBNBBBBBBBNBOwWO.........",
-        "...OWwOOBBBBBBBBBBBBOwWO........",
-        "....OO.OBBcBBBBBBbBBOOO.........",
-        ".......OBBcBBBBBBbBBO...........",
-        ".......OBBBBBBBBBBBBO...........",
-        ".......OBBBBBOOOBBBBO...........",
-        ".......OBBbBO..OBbBBO...........",
-        ".......OBbBBO..OBbBBO...........",
-        ".......OWWWWO..OWWWWO...........",
-        ".......OwwwWO..OwwwWO...........",
-        ".......OKKKKO..OKKKKO...........",
-        ".......OOOOOO..OOOOOO..........."
-    };
-
-    private static readonly string[] KittyWalk1Grid =
-    {
-        "....OOO...............OOO.......",
-        "...OWWWO.............OrrRO......",
-        "..OWWWWWO...........OrRRaRO.....",
-        "..OWwWWwO..OOOOOOO..ORRRrRO.....",
-        ".OWWWWWwOOOqqqqqqqOORRrrRRRO....",
-        ".OWWWWWWWWWWWWWWWWOORRRrRRRRO...",
-        ".OWWWWWWWWWWWWWWWWOORRrRRRrRO...",
-        "OWWWWWWWWWWWWWWWWWWOOOrRRrOO....",
-        "OWWWWWWWWWWWWWWWWWWWWWOOOO......",
-        "OWWWWWWEWWWWWWWWWEWWWWWWwO......",
-        "OOOWWWWEWWWWWWWWWEWWWWwOOO......",
-        "OWWWWWWEWWWWNNWWWEWWWWWWwO......",
-        "OOOWWWWwWWWWnnWWWWWWWWwOOO......",
-        ".OOWWWWPWWWWWWWWWWPWWWwOO.......",
-        "..OWWWWwWWWWWWWWWWWWWwOO........",
-        "...OOwwwwWWWWWWWWwwwOOO.........",
-        "....OOOOOOOOOOOOOOOOO...........",
-        "...OWWOpPPPPPPPPPPpO............",
-        "..OWWwOOBBBBBBBBBBpOWO..........",
-        "...OOO.OBNBBBBBBBNBOwWO.........",
-        ".......OBBBBBBBBBBBBOOO.........",
-        "......OOBBcBBBBBBbBBOO..........",
-        ".....OBBcBBBOOOOBBbBBO..........",
-        "....OBBbBBO.....OBBbBO..........",
-        "....OBbBBO.......OBbBBO.........",
-        "....OWWWWO.......OWWWWO.........",
-        "....OwwwWO.......OwwwWO.........",
-        "....OKKKKO.......OKKKKO.........",
-        "....OOOOOO.......OOOOOO.........",
-        "................................",
-        "................................",
-        "................................"
-    };
-
-    private static readonly string[] KittyWalk2Grid =
-    {
-        "................................",
-        "....OOO...............OOO.......",
-        "...OWWWO.............OrrRO......",
-        "..OWWWWWO...........OrRRaRO.....",
-        "..OWwWWwO..OOOOOOO..ORRRrRO.....",
-        ".OWWWWWwOOOqqqqqqqOORRrrRRRO....",
-        ".OWWWWWWWWWWWWWWWWOORRRrRRRRO...",
-        ".OWWWWWWWWWWWWWWWWOORRrRRRrRO...",
-        "OWWWWWWWWWWWWWWWWWWOOOrRRrOO....",
-        "OWWWWWWWWWWWWWWWWWWWWWOOOO......",
-        "OWWWWWWEWWWWWWWWWEWWWWWWwO......",
-        "OOOWWWWEWWWWWWWWWEWWWWwOOO......",
-        "OWWWWWWEWWWWNNWWWEWWWWWWwO......",
-        "OOOWWWWwWWWWnnWWWWWWWWwOOO......",
-        ".OOWWWWPWWWWWWWWWWPWWWwOO.......",
-        "..OWWWWwWWWWWWWWWWWWWwOO........",
-        "...OOwwwwWWWWWWWWwwwOOO.........",
-        "....OOOOOOOOOOOOOOOOO...........",
-        ".....OOpPPPPPPPPPPpOO...........",
-        "....OWOpPPBBBBBBPPpOWO..........",
-        "....OWOOBNBBBBBBBNBOWO..........",
-        ".....OOOBBBBBBBBBBBBOO..........",
-        ".......OBBcBBBOBBbBBO...........",
-        "........OBBbBOOBbBBO............",
-        "........OBbBBO.OBbBO............",
-        "........OWWWWO.OBbBO............",
-        "........OwwwWO.OWWWWO...........",
-        "........OKKKKO.OwwwWO...........",
-        "........OOOOOO.OKKKKO...........",
-        "...............OOOOOO...........",
-        "................................",
-        "................................"
-    };
-
-    private static readonly string[] KittyWalk3Grid =
-    {
-        "....OOO...............OOO.......",
-        "...OWWWO.............OrrRO......",
-        "..OWWWWWO...........OrRRaRO.....",
-        "..OWwWWwO..OOOOOOO..ORRRrRO.....",
-        ".OWWWWWwOOOqqqqqqqOORRrrRRRO....",
-        ".OWWWWWWWWWWWWWWWWOORRRrRRRRO...",
-        ".OWWWWWWWWWWWWWWWWOORRrRRRrRO...",
-        "OWWWWWWWWWWWWWWWWWWOOOrRRrOO....",
-        "OWWWWWWWWWWWWWWWWWWWWWOOOO......",
-        "OWWWWWWEWWWWWWWWWEWWWWWWwO......",
-        "OOOWWWWEWWWWWWWWWEWWWWwOOO......",
-        "OWWWWWWEWWWWNNWWWEWWWWWWwO......",
-        "OOOWWWWwWWWWnnWWWWWWWWwOOO......",
-        ".OOWWWWPWWWWWWWWWWPWWWwOO.......",
-        "..OWWWWwWWWWWWWWWWWWWwOO........",
-        "...OOwwwwWWWWWWWWwwwOOO.........",
-        "....OOOOOOOOOOOOOOOOO...........",
-        ".....OOpPPPPPPPPPPpOWWO.........",
-        "....OWOpBBBBBBBBBBBOwWWO........",
-        "....OWOOBNBBBBBBBNBOOOO.........",
-        ".....OOOBBBBBBBBBBBBO...........",
-        ".......OOBBcBBBBBBbBBOO.........",
-        "......OBBbBBOOOOBBcBBBO.........",
-        ".....OBBbBO.....OBBbBBO.........",
-        "....OBbBBO.......OBbBBO.........",
-        "....OWWWWO.......OWWWWO.........",
-        "....OwwwWO.......OwwwWO.........",
-        "....OKKKKO.......OKKKKO.........",
-        "....OOOOOO.......OOOOOO.........",
-        "................................",
-        "................................",
-        "................................"
-    };
-
-    private static readonly string[] KittyJumpGrid =
-    {
-        "....OOO...............OOO.......",
-        "...OWWWO.............OrrRO......",
-        "..OWWWWWO...........OrRRaRO.....",
-        "..OWwWWwO..OOOOOOO..ORRRrRO.....",
-        ".OWWWWWwOOOqqqqqqqOORRrrRRRO....",
-        ".OWWWWWWWWWWWWWWWWOORRRrRRRRO...",
-        ".OWWWWWWWWWWWWWWWWOORRrRRRrRO...",
-        "OWWWWWWWWWWWWWWWWWWOOOrRRrOO....",
-        "OWWWWWWWWWWWWWWWWWWWWWOOOO......",
-        "OWWWWWWEWWWWWWWWWEWWWWWWwO......",
-        "OOOWWWWEWWWWWWWWWEWWWWwOOO......",
-        "OWWWWWWEWWWWNNWWWEWWWWWWwO......",
-        "OOOWWWWwWWWWnnWWWWWWWWwOOO......",
-        ".OOWWWWPWWWWWWWWWWPWWWwOO.......",
-        "..OWWWWwWWWWWWWWWWWWWwOO........",
-        ".OOwwwwwWWWWWWWWwwwwOOO.........",
-        "OWWO.OOOOOOOOOOOOOOOO.OWWO......",
-        "OWwO.OOpPPPPPPPPPPpOO.OwWO......",
-        ".OOO.OOpPPBBBBBBPPpOO.OOO.......",
-        ".......OBNBBBBBBBNBO............",
-        ".......OBBBBBBBBBBBBO...........",
-        "......OOBBcBBBBBBbBBOO..........",
-        ".....OBBcBBBOOOOBBbBBBO.........",
-        "....OWWWWO.......OBBbBO.........",
-        "....OwwwWO......OWWWWO..........",
-        "....OKKKKO......OwwwWO..........",
-        "....OOOOOO......OKKKKO..........",
-        "................OOOOOO..........",
-        "................................",
-        "................................",
-        "................................",
-        "................................"
-    };
-
-    // ================== ANIMAÇÃO DO NOVO PODER (FASE 2) - BONECO MENINO: PULO ESMAGADOR ==================
-    private static readonly string[] BoyStompPrepGrid =
-    {
-        "..........OOOOOOOOOO............",
-        "........OOllHHHHHHhhOO..........",
-        ".......OllHHHHHHHHHhhhO.........",
-        "......OlHHHHHHHHHHHHhhhO........",
-        ".....OHHhhHHHHHHHHHHhhhhO.......",
-        ".....OHhOOHHSSSSSShHOhhHO.......",
-        "....OHhOSSSSSSSSSSSSsOOhHO......",
-        "....OHOSSSSSWESSSSWESsOHO.......",
-        ".....OSSSSSSWEsSSSWESsOO........",
-        ".....OSSSSSPSSSSSSPSSsO.........",
-        "......OSSSSSSSSSSSSsOO..........",
-        "....OOOOOOSSSSSSSSsOOOOOO.......",
-        "...OOUUYYYYYYYYYYYYYYYyUOO......",
-        "...OSSOYYYYYYYYYYYYYYyyOSSO.....",
-        "....OO.OOUYYYYYYYYYYyyO.OO......",
-        "........OOYYYYYYYYYYyOO.........",
-        "..........ODDDDDMDOOO...........",
-        "........OOOBBBBBBBBBOOO.........",
-        ".......OBBcBBBBBBBBBbBBO........",
-        "......OBBcBBOOOOOOOBBbBBO.......",
-        "......OKKKKOO.....OOKKKKO.......",
-        "......OKkkKO.......OKkkKO.......",
-        "......OOOOOO.......OOOOOO.......",
-        ".....OLLCCLLO.....OLLCCLLO......",
-        "......OOUUOO.......OOUUOO.......",
-        "................................",
-        "................................",
-        "................................",
-        "................................",
-        "................................",
-        "................................",
-        "................................"
-    };
-
-    private static readonly string[] BoyStompDiveGrid =
-    {
-        "...OO.....OOOOOOOOOO.....OO.....",
-        "..OSSO..OOllHHHHHHhhOO..OSSO....",
-        "..OYYOOllHHHHHHHHHhhhOOYYO......",
-        "...OYYOlHHHHHHHHHHHHhhhOYO......",
-        "....OOOHHhhHHHHHHHHHHhhhhO......",
-        ".....OHhOOHHSSSSSShHOhhHO.......",
-        "....OHhOSSSSSSSSSSSSsOOhHO......",
-        "....OHOSSSSSWESSSSWESsOHO.......",
-        ".....OSSSSSSWEsSSSWESsOO........",
-        ".....OSSSSSPSSSSSSPSSsO.........",
-        "......OSSSSSSSSSSSSsOO..........",
-        ".......OOSSSSSSSSsOO............",
-        ".......OOYYYYYYYYOO.............",
-        "......OOUYYYYYYYYYyOO.OOOOOO....",
-        ".....OOUYYYYYYYYYYyyOGGGGGGGGO..",
-        ".....OOyyyyYYYYYYyyOOGGLLCCCLLO.",
-        ".......OOYYyYYYYYYyOOGgGGGGGGGO.",
-        ".........OYYYYYYYYyOOgGOOOOOOO..",
-        "..........ODDDDDMDOOO...........",
-        ".........OBBBBBBBBBBBO..........",
-        ".........OBBcBBBBBbBBO..........",
-        ".........OBBcBBBBBbBBO..........",
-        ".........OBBBBOOOOBBBO..........",
-        ".........OBBbO....OBbBO.........",
-        "........OKKKKO....OKKKKO........",
-        "........OKkkKO....OKkkKO........",
-        ".......OLLCCLLO..OLLCCLLO.......",
-        "......OLCCCCCCLOOLCCCCCCLO......",
-        ".......OOUUMMOO..OOUUMMOO.......",
-        "........OOLLOO....OOLLOO........",
-        "................................",
-        "................................"
-    };
-
-    private static readonly string[] BoyStompBounceGrid =
-    {
-        "..OO......OOOOOOOOOO......OO....",
-        ".OSSO...OOllHHHHHHhhOO...OSSO...",
-        ".OSSOOOllHHHHHHHHHhhhOOOSSOO....",
-        "..OYYUOlHHHHHHHHHHHHhhhUYYO.....",
-        "...OYYOHHhhHHHHHHHHHHhhhhO......",
-        "....OOOHhOOHHSSSSSShHOhhHO......",
-        ".....OHhOSSSSSSSSSSSSsOOhHO.....",
-        ".....OHOSSSSSWESSSSWESsOHO......",
-        "......OSSSSSSWEsSSSWESsOO.......",
-        "......OSSSSSPSSSSSSPSSsO........",
-        ".......OSSSSSSSSSSSSsOO.........",
-        "........OOSSSSSSSSsOO...........",
-        "........OOYYYYYYYYOO............",
-        ".......OOUYYYYYYYYYyOO..........",
-        "......OOUYYYYYYYYYYyyO..........",
-        "......OOyyyyYYYYYYyyOO..........",
-        "........OOYYyYYYYYYyOO..........",
-        "..........ODDDDDMDOOO...........",
-        "........OOOBBBBBBBBBOOO.........",
-        ".......OBBcBBBBBBBBBbBBO........",
-        "......OBBcBBOOOOOOOBBbBBO.......",
-        ".....OKKKKO.........OKKKKO......",
-        ".....OKkkKO.........OKkkKO......",
-        "....OLLCCLLO.......OLLCCLLO.....",
-        "...OLCCCCCCLO.....OLCCCCCCLO....",
-        "....OOUUMMOO.......OOUUMMOO.....",
-        "................................",
-        "................................",
-        "................................",
-        "................................",
-        "................................",
-        "................................"
-    };
-
-    // ================== ANIMAÇÃO DO NOVO PODER (FASE 2) - BONECA KITTY: ARRANHÃO COM GARRAS ==================
-    private static readonly string[] KittyScratch1Grid =
-    {
-        "....OOO...............OOO.......",
-        "...OWWWO.............OrrRO......",
-        "..OWWWWWO...........OrRRaRO.....",
-        "..OWwWWwO..OOOOOOO..ORRRrRO.....",
-        ".OWWWWWwOOOqqqqqqqOORRrrRRRO....",
-        ".OWWWWWWWWWWWWWWWWOORRRrRRRRO...",
-        ".OWWWWWWWWWWWWWWWWOORRrRRRrRO...",
-        "OWWWWWWWWWWWWWWWWWWOOOrRRrOO....",
-        "OWWWWWWWWWWWWWWWWWWWWWOOOO......",
-        "OWWWWWWEWWWWWWWWWEWWWWWWwO......",
-        "OOOWWWWEWWWWWWWWWEWWWWwOOO......",
-        "OWWWWWWEWWWWNNWWWEWWWWWWwO......",
-        "OOOWWWWwWWWWnnWWWWWWWWwOOO......",
-        ".OOWWWWPWWWWWWWWWWPWWWwOO..OO...",
-        "..OWWWWwWWWWWWWWWWWWWwOO..OCCO..",
-        "...OOwwwwWWWWWWWWwwwOOO..OWCCLO.",
-        "....OOOOOOOOOOOOOOOOO...OWWWCCLO",
-        ".....OOpPPPPPPPPPPpOOOOOWWWWCLO.",
-        "....OWOpPPBBBBBBPPpWWWWWWWWOO...",
-        "...OWWwOBNBBBBBBBNBOOOOOOOO.....",
-        "...OWwOOBBBBBBBBBBBBO...........",
-        "....OO.OBBcBBBBBBbBBO...........",
-        ".......OBBcBBBBBBbBBO...........",
-        ".......OBBBBBBBBBBBBO...........",
-        ".......OBBBBBOOOBBBBO...........",
-        ".......OBBbBO..OBbBBO...........",
-        ".......OBbBBO..OBbBBO...........",
-        ".......OWWWWO..OWWWWO...........",
-        ".......OwwwWO..OwwwWO...........",
-        ".......OKKKKO..OKKKKO...........",
-        ".......OOOOOO..OOOOOO...........",
-        "................................"
-    };
-
-    private static readonly string[] KittyScratch2Grid =
-    {
-        ".....OOO...............OOO......",
-        "....OWWWO.............OrrRO.....",
-        "...OWWWWWO...........OrRRaRO....",
-        "...OWwWWwO..OOOOOOO..ORRRrRO....",
-        "..OWWWWWwOOOqqqqqqqOORRrrRRRO...",
-        "..OWWWWWWWWWWWWWWWWOORRRrRRRRO..",
-        "..OWWWWWWWWWWWWWWWWOORRrRRRrRO..",
-        ".OWWWWWWWWWWWWWWWWWWOOOrRRrOO...",
-        ".OWWWWWWWWWWWWWWWWWWWWWOOOO..aa.",
-        ".OWWWWWWEWWWWWWWWWEWWWWWWwO..RNa",
-        ".OOOWWWWEWWWWWWWWWEWWWWwOOO...RN",
-        ".OWWWWWWEWWWWNNWWWEWWWWWWwO..aaC",
-        ".OOOWWWWwWWWWnnWWWWWWWWwOOO..RNC",
-        "..OOWWWWPWWWWWWWWWWPWWWwOO....RN",
-        "...OWWWWwWWWWWWWWWWWWWwOO...aaCL",
-        "....OOwwwwWWWWWWWWwwwOOO....RNCL",
-        ".....OOOOOOOOOOOOOOOOO.OOOO..RNC",
-        "....OWWOpPPPPPPPPPPpOOWWWWWO..CL",
-        "...OWWwOOBBBBBBBBBBpWWWWWWCCLO..",
-        "....OOO.OBNBBBBBBBNBOOOOOOOCCLO.",
-        "........OBBBBBBBBBBBBO.....OOOO.",
-        ".......OOBBcBBBBBBbBBOO.........",
-        "......OBBcBBBOOOOBBbBBO.........",
-        ".....OBBbBBO.....OBBbBO.........",
-        ".....OBbBBO.......OBbBBO........",
-        ".....OWWWWO.......OWWWWO........",
-        ".....OwwwWO.......OwwwWO........",
-        ".....OKKKKO.......OKKKKO........",
-        ".....OOOOOO.......OOOOOO........",
-        "................................",
-        "................................",
-        "................................"
-    };
-
-    private static readonly string[] KittyScratch3Grid =
-    {
-        ".....OOO...............OOO......",
-        "....OWWWO.............OrrRO.....",
-        "...OWWWWWO...........OrRRaRO....",
-        "...OWwWWwO..OOOOOOO..ORRRrRO....",
-        "..OWWWWWwOOOqqqqqqqOORRrrRRRO...",
-        "..OWWWWWWWWWWWWWWWWOORRRrRRRRO..",
-        "..OWWWWWWWWWWWWWWWWOORRrRRRrRO..",
-        ".OWWWWWWWWWWWWWWWWWWOOOrRRrOO...",
-        ".OWWWWWWWWWWWWWWWWWWWWWOOOO.....",
-        ".OWWWWWWEWWWWWWWWWEWWWWWWwO.....",
-        ".OOOWWWWEWWWWWWWWWEWWWWwOOO.....",
-        ".OWWWWWWEWWWWNNWWWEWWWWWWwO.....",
-        ".OOOWWWWwWWWWnnWWWWWWWWwOOO.....",
-        "..OOWWWWPWWWWWWWWWWPWWWwOO......",
-        "...OWWWWwWWWWWWWWWWWWWwOO.......",
-        "....OOwwwwWWWWWWWWwwwOOO........",
-        ".....OOOOOOOOOOOOOOOOO..........",
-        ".....OOpPPPPPPPPPPpOO...........",
-        "....OWOpPPBBBBBBPPpOWWO....aa...",
-        "....OWOOBNBBBBBBBNBOwWWO..RNCL..",
-        ".....OOOBBBBBBBBBBBBOWWWO..RNCL.",
-        ".......OBBcBBBBBBbBBOOWCCLO.RNC.",
-        ".......OBBcBBBBBBbBBO..OCCLO.CL.",
-        ".......OBBBBBBBBBBBBO...OOOO....",
-        ".......OBBBBBOOOBBBBO...........",
-        ".......OBBbBO..OBbBBO...........",
-        ".......OBbBBO..OBbBBO...........",
-        ".......OWWWWO..OWWWWO...........",
-        ".......OwwwWO..OwwwWO...........",
-        ".......OKKKKO..OKKKKO...........",
-        ".......OOOOOO..OOOOOO...........",
-        "................................"
-    };
-
     public int FacingDirection => facingDirection;
     public bool IsScratching => scratchAnimTimer > 0f;
 
@@ -767,11 +64,14 @@ public class PixelHeroAnimator2D : MonoBehaviour
 
     private void OnValidate()
     {
-        EnsureSprites();
-        if (!Application.isPlaying)
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.delayCall += () =>
         {
+            if (this == null || Application.isPlaying) return;
+            EnsureSprites();
             ApplyFrame(GetCurrentIdleSprite(0));
-        }
+        };
+#endif
     }
 
     public void SetCharacterType(PlayerCharacterType type)
@@ -786,88 +86,69 @@ public class PixelHeroAnimator2D : MonoBehaviour
         if (spriteRenderer == null)
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
+            ColoredBox2D oldBox = GetComponent<ColoredBox2D>();
+            if (oldBox != null)
+            {
+                oldBox.enabled = false;
+            }
         }
         if (unityAnimator == null)
         {
             unityAnimator = GetComponent<Animator>();
         }
 
-        ColoredBox2D oldBox = GetComponent<ColoredBox2D>();
-        if (oldBox != null)
+        if (heroSpritesReady && boyIdleSprites != null && boyIdleSprites[0] != null && kittyIdleSprites != null && kittyIdleSprites[0] != null)
         {
-            oldBox.enabled = false;
+            return;
         }
 
-        if (boyIdleSprites == null || boyIdleSprites.Length != 2 || boyIdleSprites[0] == null)
+        // Salto geracional 64-Bit (64x64 @ 42 PPU = ~1.40u de altura) carregados de Resources/Sprites64/
+        boyIdleSprites = new[]
         {
-            boyIdleSprites = new[]
-            {
-                BuildSpriteFromGrid(BoyIdle1Grid, "HeroBoy32_Idle1"),
-                BuildSpriteFromGrid(BoyIdle2Grid, "HeroBoy32_Idle2")
-            };
-        }
+            PixelArt64Generator.GetBoySprite(0, "HeroBoy64_Idle1"),
+            PixelArt64Generator.GetBoySprite(1, "HeroBoy64_Idle2")
+        };
 
-        if (boyWalkSprites == null || boyWalkSprites.Length != 4 || boyWalkSprites[0] == null)
+        Sprite bw1 = PixelArt64Generator.GetBoySprite(2, "HeroBoy64_Walk1");
+        Sprite bw2 = PixelArt64Generator.GetBoySprite(3, "HeroBoy64_Walk2");
+        Sprite bw3 = PixelArt64Generator.GetBoySprite(4, "HeroBoy64_Walk3");
+        boyWalkSprites = new[] { bw1, bw2, bw3, bw2 };
+
+        boyJumpSprite = PixelArt64Generator.GetBoySprite(5, "HeroBoy64_Jump");
+        boyShootSprite = PixelArt64Generator.GetBoySprite(6, "HeroBoy64_Shoot");
+
+        boyStompSprites = new[]
         {
-            Sprite w1 = BuildSpriteFromGrid(BoyWalk1Grid, "HeroBoy32_Walk1");
-            Sprite w2 = BuildSpriteFromGrid(BoyWalk2Grid, "HeroBoy32_Walk2");
-            Sprite w3 = BuildSpriteFromGrid(BoyWalk3Grid, "HeroBoy32_Walk3");
-            boyWalkSprites = new[] { w1, w2, w3, w2 };
-        }
+            PixelArt64Generator.GetBoySprite(7, "HeroBoy64_StompPrep"),
+            PixelArt64Generator.GetBoySprite(8, "HeroBoy64_StompDive"),
+            PixelArt64Generator.GetBoySprite(9, "HeroBoy64_StompBounce")
+        };
 
-        if (boyJumpSprite == null)
+        kittyIdleSprites = new[]
         {
-            boyJumpSprite = BuildSpriteFromGrid(BoyJumpGrid, "HeroBoy32_Jump");
-        }
+            PixelArt64Generator.GetKittySprite(0, "HeroKitty64_Idle1"),
+            PixelArt64Generator.GetKittySprite(1, "HeroKitty64_Idle2")
+        };
 
-        if (boyShootSprite == null)
+        Sprite kw1 = PixelArt64Generator.GetKittySprite(2, "HeroKitty64_Walk1");
+        Sprite kw2 = PixelArt64Generator.GetKittySprite(3, "HeroKitty64_Walk2");
+        Sprite kw3 = PixelArt64Generator.GetKittySprite(4, "HeroKitty64_Walk3");
+        kittyWalkSprites = new[] { kw1, kw2, kw3, kw2 };
+
+        kittyJumpSprite = PixelArt64Generator.GetKittySprite(5, "HeroKitty64_Jump");
+
+        kittyScratchSprites = new[]
         {
-            boyShootSprite = BuildSpriteFromGrid(BoyShootGrid, "HeroBoy32_Shoot");
-        }
+            PixelArt64Generator.GetKittySprite(6, "HeroKitty64_Scratch1"),
+            PixelArt64Generator.GetKittySprite(7, "HeroKitty64_Scratch2"),
+            PixelArt64Generator.GetKittySprite(8, "HeroKitty64_Scratch3")
+        };
 
-        if (boyStompSprites == null || boyStompSprites.Length != 3 || boyStompSprites[0] == null)
+        heroSpritesReady = true;
+        if (spriteRenderer != null)
         {
-            boyStompSprites = new[]
-            {
-                BuildSpriteFromGrid(BoyStompPrepGrid, "HeroBoy32_StompPrep"),
-                BuildSpriteFromGrid(BoyStompDiveGrid, "HeroBoy32_StompDive"),
-                BuildSpriteFromGrid(BoyStompBounceGrid, "HeroBoy32_StompBounce")
-            };
+            spriteRenderer.color = Color.white;
         }
-
-        if (kittyIdleSprites == null || kittyIdleSprites.Length != 2 || kittyIdleSprites[0] == null)
-        {
-            kittyIdleSprites = new[]
-            {
-                BuildSpriteFromGrid(KittyIdle1Grid, "HeroKitty32_Idle1"),
-                BuildSpriteFromGrid(KittyIdle2Grid, "HeroKitty32_Idle2")
-            };
-        }
-
-        if (kittyWalkSprites == null || kittyWalkSprites.Length != 4 || kittyWalkSprites[0] == null)
-        {
-            Sprite kw1 = BuildSpriteFromGrid(KittyWalk1Grid, "HeroKitty32_Walk1");
-            Sprite kw2 = BuildSpriteFromGrid(KittyWalk2Grid, "HeroKitty32_Walk2");
-            Sprite kw3 = BuildSpriteFromGrid(KittyWalk3Grid, "HeroKitty32_Walk3");
-            kittyWalkSprites = new[] { kw1, kw2, kw3, kw2 };
-        }
-
-        if (kittyJumpSprite == null)
-        {
-            kittyJumpSprite = BuildSpriteFromGrid(KittyJumpGrid, "HeroKitty32_Jump");
-        }
-
-        if (kittyScratchSprites == null || kittyScratchSprites.Length != 3 || kittyScratchSprites[0] == null)
-        {
-            kittyScratchSprites = new[]
-            {
-                BuildSpriteFromGrid(KittyScratch1Grid, "HeroKitty32_Scratch1"),
-                BuildSpriteFromGrid(KittyScratch2Grid, "HeroKitty32_Scratch2"),
-                BuildSpriteFromGrid(KittyScratch3Grid, "HeroKitty32_Scratch3")
-            };
-        }
-
-        spriteRenderer.color = Color.white;
     }
 
     public void UpdateAnimation(float horizontalInput, bool isGrounded, float deltaTime, float verticalVelocity = 0f, bool hasStage2Power = false)
@@ -885,7 +166,6 @@ public class PixelHeroAnimator2D : MonoBehaviour
 
         spriteRenderer.flipX = (facingDirection < 0);
 
-        // Sincroniza parâmetros com Animator Controller do Unity (padrão da skill unity-animation)
         if (unityAnimator != null && unityAnimator.runtimeAnimatorController != null)
         {
             unityAnimator.SetFloat(SpeedHash, Mathf.Abs(horizontalInput), 0.08f, deltaTime);
@@ -934,18 +214,17 @@ public class PixelHeroAnimator2D : MonoBehaviour
 
         if (!isGrounded)
         {
-            // Se o Menino já desbloqueou o Poder de Pulo Esmagador na Fase 2, mostra a animação de Dive-Stomp ao cair!
             if (characterType == PlayerCharacterType.BoyLaser && hasStage2Power && boyStompSprites != null && boyStompSprites.Length >= 2)
             {
                 if (verticalVelocity < -1.5f)
                 {
-                    ApplyFrame(boyStompSprites[1]); // BoyStompDive (botas energizadas apontadas para baixo)
+                    ApplyFrame(boyStompSprites[1]); // BoyStompDive
                     animTimer = 0f;
                     return;
                 }
                 else if (verticalVelocity < 2.2f)
                 {
-                    ApplyFrame(boyStompSprites[0]); // BoyStompPrep (preparando o pisão no ápice do pulo)
+                    ApplyFrame(boyStompSprites[0]); // BoyStompPrep
                     animTimer = 0f;
                     return;
                 }
@@ -983,7 +262,7 @@ public class PixelHeroAnimator2D : MonoBehaviour
 
     public void TriggerShootEffect()
     {
-        shootRecoilTimer = 0.09f;
+        shootRecoilTimer = 0.14f;
         if (unityAnimator != null && unityAnimator.runtimeAnimatorController != null)
         {
             unityAnimator.SetTrigger(ShootTriggerHash);
@@ -1010,19 +289,21 @@ public class PixelHeroAnimator2D : MonoBehaviour
 
     public Vector3 GetGunMuzzleWorldPosition()
     {
-        return transform.position + new Vector3(facingDirection * 0.56f, 0.01f, 0f);
+        // Cano ciano da pistola na sprite 64x64 @ 42 PPU
+        return transform.position + new Vector3(facingDirection * 0.58f, 0.34f, 0f);
     }
 
     public Vector3 GetScratchSpawnWorldPosition()
     {
-        return transform.position + new Vector3(facingDirection * 0.68f, 0.02f, 0f);
+        // Arco do arranhão diante da pata da Kitty na sprite 64x64 @ 42 PPU
+        return transform.position + new Vector3(facingDirection * 0.68f, 0.16f, 0f);
     }
 
     public static Texture2D GetBoyPreviewTexture()
     {
         if (cachedBoyPreviewTex == null)
         {
-            cachedBoyPreviewTex = BuildTextureFromGrid("HeroBoy32_Preview", BoyIdle1Grid);
+            cachedBoyPreviewTex = PixelArt64Generator.GetBoyTexture(0, "HeroBoy64_Idle1");
         }
         return cachedBoyPreviewTex;
     }
@@ -1031,7 +312,7 @@ public class PixelHeroAnimator2D : MonoBehaviour
     {
         if (cachedKittyPreviewTex == null)
         {
-            cachedKittyPreviewTex = BuildTextureFromGrid("HeroKitty32_Preview", KittyIdle1Grid);
+            cachedKittyPreviewTex = PixelArt64Generator.GetKittyTexture(0, "HeroKitty64_Idle1");
         }
         return cachedKittyPreviewTex;
     }
@@ -1042,9 +323,9 @@ public class PixelHeroAnimator2D : MonoBehaviour
         {
             cachedBoyStompPreviewTexs = new[]
             {
-                BuildTextureFromGrid("HeroBoy32_StompPrep_Prev", BoyStompPrepGrid),
-                BuildTextureFromGrid("HeroBoy32_StompDive_Prev", BoyStompDiveGrid),
-                BuildTextureFromGrid("HeroBoy32_StompBounce_Prev", BoyStompBounceGrid)
+                PixelArt64Generator.GetBoyTexture(7, "HeroBoy64_StompPrep"),
+                PixelArt64Generator.GetBoyTexture(8, "HeroBoy64_StompDive"),
+                PixelArt64Generator.GetBoyTexture(9, "HeroBoy64_StompBounce")
             };
         }
         return cachedBoyStompPreviewTexs;
@@ -1056,9 +337,9 @@ public class PixelHeroAnimator2D : MonoBehaviour
         {
             cachedKittyScratchPreviewTexs = new[]
             {
-                BuildTextureFromGrid("HeroKitty32_Scratch1_Prev", KittyScratch1Grid),
-                BuildTextureFromGrid("HeroKitty32_Scratch2_Prev", KittyScratch2Grid),
-                BuildTextureFromGrid("HeroKitty32_Scratch3_Prev", KittyScratch3Grid)
+                PixelArt64Generator.GetKittyTexture(6, "HeroKitty64_Scratch1"),
+                PixelArt64Generator.GetKittyTexture(7, "HeroKitty64_Scratch2"),
+                PixelArt64Generator.GetKittyTexture(8, "HeroKitty64_Scratch3")
             };
         }
         return cachedKittyScratchPreviewTexs;
@@ -1076,61 +357,6 @@ public class PixelHeroAnimator2D : MonoBehaviour
         if (spriteRenderer != null && sprite != null)
         {
             spriteRenderer.sprite = sprite;
-        }
-    }
-
-    private static Sprite BuildSpriteFromGrid(string[] grid, string spriteName)
-    {
-        return PixelArtBuilder.CreateSpriteFromGrid(spriteName, grid, CharToColor, pixelsPerUnit: 32f, width: 32, height: 32);
-    }
-
-    private static Texture2D BuildTextureFromGrid(string key, string[] grid)
-    {
-        return PixelArtBuilder.CreateTextureFromGrid(key, grid, CharToColor, width: 32, height: 32);
-    }
-
-    private static Color CharToColor(char c)
-    {
-        switch (c)
-        {
-            // Contorno e detalhes comuns
-            case 'O': return new Color(0.08f, 0.08f, 0.13f, 1f); // Contorno pixel art escuro (estilo Celeste/Duck Souls)
-            case 'W': return new Color(0.98f, 0.98f, 1.00f, 1f); // Branco puro / esclera / pelagem
-            case 'E': return new Color(0.09f, 0.10f, 0.16f, 1f); // Íris escura
-
-            // Menino (Cabelo, pele, jaqueta amarela, calça jeans, laser)
-            case 'H': return new Color(0.32f, 0.19f, 0.11f, 1f); // Cabelo castanho médio
-            case 'h': return new Color(0.20f, 0.11f, 0.06f, 1f); // Sombra do cabelo
-            case 'l': return new Color(0.50f, 0.32f, 0.19f, 1f); // Luz quente do cabelo
-            case 'S': return new Color(1.00f, 0.81f, 0.63f, 1f); // Pele base
-            case 's': return new Color(0.86f, 0.63f, 0.46f, 1f); // Sombra da pele
-            case 'Y': return new Color(0.99f, 0.82f, 0.14f, 1f); // Camiseta/jaqueta amarela
-            case 'y': return new Color(0.78f, 0.56f, 0.04f, 1f); // Sombra âmbar da jaqueta
-            case 'U': return new Color(1.00f, 0.94f, 0.45f, 1f); // Brilho solar na jaqueta
-            case 'D': return new Color(0.24f, 0.16f, 0.12f, 1f); // Cinto de couro
-            case 'M': return new Color(0.94f, 0.78f, 0.28f, 1f); // Fivela dourada
-            case 'B': return new Color(0.24f, 0.56f, 0.90f, 1f); // Calça jeans / jardineira azul
-            case 'b': return new Color(0.14f, 0.36f, 0.68f, 1f); // Sombra azul
-            case 'c': return new Color(0.46f, 0.76f, 0.98f, 1f); // Realce jeans
-            case 'K': return new Color(0.18f, 0.20f, 0.27f, 1f); // Botas escuras
-            case 'k': return new Color(0.34f, 0.37f, 0.46f, 1f); // Sola / brilho da bota
-            case 'G': return new Color(0.60f, 0.68f, 0.78f, 1f); // Metal da pistola laser
-            case 'g': return new Color(0.28f, 0.33f, 0.42f, 1f); // Empunhadura/sombra metálica
-            case 'L': return new Color(0.05f, 0.90f, 1.00f, 1f); // Energia ciano do laser
-            case 'C': return new Color(0.78f, 1.00f, 1.00f, 1f); // Núcleo intenso do laser
-
-            // Menina Kitty (Pelagem com volume, laço rubi, blusa rosa)
-            case 'w': return new Color(0.84f, 0.86f, 0.93f, 1f); // Sombra suave da pelagem branca
-            case 'q': return new Color(0.68f, 0.72f, 0.82f, 1f); // Sombra profunda (volume)
-            case 'R': return new Color(0.95f, 0.16f, 0.36f, 1f); // Laço vermelho-rosa vibrante
-            case 'r': return new Color(0.68f, 0.07f, 0.24f, 1f); // Dobra/sombra do laço
-            case 'a': return new Color(1.00f, 0.55f, 0.68f, 1f); // Brilho do laço
-            case 'N': return new Color(1.00f, 0.83f, 0.14f, 1f); // Nariz / botões dourados
-            case 'n': return new Color(0.84f, 0.60f, 0.05f, 1f); // Sombra do nariz
-            case 'P': return new Color(0.98f, 0.46f, 0.68f, 1f); // Blusinha rosa / rubor
-            case 'p': return new Color(1.00f, 0.70f, 0.84f, 1f); // Brilho rosa
-
-            default:  return new Color(0f, 0f, 0f, 0f);
         }
     }
 }

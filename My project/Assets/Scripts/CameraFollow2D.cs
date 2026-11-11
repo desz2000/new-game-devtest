@@ -3,9 +3,15 @@ using UnityEngine;
 public class CameraFollow2D : MonoBehaviour
 {
     public Transform target;
-    public Vector3 offset = new Vector3(1.5f, 1.2f, -10f);
+    public Vector3 offset = new Vector3(1.5f, 0.7f, -10f);
     public float smoothSpeed = 8f;
-    public float minY = 0f;
+    public float minY = 0.2f;
+
+    [Header("Enquadramento Vertical (mantém o chão visível em saltos e plataformas)")]
+    public float baseGroundPlayerY = -1.5f;
+    [Range(0.15f, 0.7f)]
+    public float verticalFollowFactor = 0.35f;
+    public float verticalScreenMargin = 1.8f;
 
     [Header("Game Feel - Trauma Screen Shake")]
     public float traumaDecay = 1.6f;
@@ -15,6 +21,12 @@ public class CameraFollow2D : MonoBehaviour
     private float shakeTime;
     private Vector3 basePosition;
     private bool hasBasePosition;
+    private Camera cachedCam;
+
+    private void Awake()
+    {
+        cachedCam = GetComponent<Camera>();
+    }
 
     public static void TriggerShake(float amount)
     {
@@ -35,12 +47,25 @@ public class CameraFollow2D : MonoBehaviour
     public void SnapToTarget()
     {
         if (target == null) return;
-        Vector3 desiredPos = target.position + offset;
-        desiredPos.y = Mathf.Max(minY, desiredPos.y * 0.4f + offset.y);
-        desiredPos.z = offset.z;
-        basePosition = desiredPos;
+        basePosition = ComputeDesiredPosition();
         hasBasePosition = true;
         transform.position = basePosition;
+    }
+
+    private Vector3 ComputeDesiredPosition()
+    {
+        float x = target.position.x + offset.x;
+        // Acompanha apenas uma fração suave da subida vertical para manter o chão/inimigos abaixo visíveis.
+        float gentleY = offset.y + (target.position.y - baseGroundPlayerY) * verticalFollowFactor;
+        float desiredY = Mathf.Max(minY, gentleY);
+
+        if (cachedCam == null) cachedCam = GetComponent<Camera>();
+        float halfH = (cachedCam != null && cachedCam.orthographic) ? cachedCam.orthographicSize : 4.8f;
+        float minSafeY = target.position.y - Mathf.Max(1.0f, halfH - verticalScreenMargin);
+        float maxSafeY = target.position.y + Mathf.Max(1.0f, halfH - verticalScreenMargin);
+        desiredY = Mathf.Clamp(desiredY, minSafeY, maxSafeY);
+
+        return new Vector3(x, desiredY, offset.z);
     }
 
     private void LateUpdate()
@@ -53,11 +78,9 @@ public class CameraFollow2D : MonoBehaviour
             hasBasePosition = true;
         }
 
-        Vector3 desiredPos = target.position + offset;
-        desiredPos.y = Mathf.Max(minY, desiredPos.y * 0.4f + offset.y);
-        desiredPos.z = offset.z;
-
-        basePosition = Vector3.Lerp(basePosition, desiredPos, smoothSpeed * Time.deltaTime);
+        Vector3 desiredPos = ComputeDesiredPosition();
+        float t = 1f - Mathf.Exp(-smoothSpeed * Time.deltaTime);
+        basePosition = Vector3.Lerp(basePosition, desiredPos, t);
 
         Vector3 shakeOffset = Vector3.zero;
         if (trauma > 0f)

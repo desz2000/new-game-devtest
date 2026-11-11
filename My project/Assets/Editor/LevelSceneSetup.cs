@@ -24,7 +24,13 @@ public static class LevelSceneSetup
         else
         {
             existingPlayer.SetupHeroVisual();
+            if (existingPlayer.GetComponent<GameUI2D>() == null)
+            {
+                GameUI2D ui = existingPlayer.gameObject.AddComponent<GameUI2D>();
+                ui.player = existingPlayer;
+            }
             LevelBuilder2D.EnsureRobotsInScene();
+            LevelBuilder2D.EnsureCheckpointsInScene();
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             EditorSceneManager.SaveOpenScenes();
         }
