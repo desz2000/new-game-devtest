@@ -65,6 +65,27 @@ public class LaserProjectile2D : MonoBehaviour
             return;
         }
 
+        Switch2D switchObj = other.GetComponent<Switch2D>();
+        if (switchObj != null)
+        {
+            if (!switchObj.isActivated)
+            {
+                switchObj.ActivateSwitch();
+            }
+            SpawnFlash(transform.position, 0.12f, new Color(0.25f, 1.0f, 0.72f, 1f));
+            Destroy(gameObject);
+            return;
+        }
+
+        BreakableBlock2D breakable = other.GetComponent<BreakableBlock2D>();
+        if (breakable != null && !breakable.IsBroken)
+        {
+            breakable.BreakBlock();
+            SpawnFlash(transform.position, 0.12f, new Color(1.0f, 0.86f, 0.28f, 1f));
+            Destroy(gameObject);
+            return;
+        }
+
         if (!other.isTrigger)
         {
             SpawnFlash(transform.position, 0.09f, new Color(1f, 0.92f, 0.25f, 1f));
@@ -340,6 +361,20 @@ public class ScratchSlashEffect2D : MonoBehaviour
                 LaserProjectile2D.SpawnImpactSpark(robot.transform.position + new Vector3(0f, 0.1f, 0f), 0.12f, new Color(1f, 0.45f, 0.78f, 1f));
                 CameraFollow2D.TriggerShake(0.24f);
                 GameInput2D.TriggerRumble(0.22f, 0.40f, 0.08f);
+                continue;
+            }
+
+            Switch2D switchObj = col.GetComponent<Switch2D>();
+            if (switchObj != null && !switchObj.isActivated)
+            {
+                switchObj.ActivateSwitch();
+                continue;
+            }
+
+            BreakableBlock2D breakable = col.GetComponent<BreakableBlock2D>();
+            if (breakable != null && !breakable.IsBroken)
+            {
+                breakable.BreakBlock();
             }
         }
     }
@@ -445,5 +480,132 @@ public class StompShockwaveEffect2D : MonoBehaviour
         tex.Apply();
         cachedRingSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f);
         return cachedRingSprite;
+    }
+}
+
+/// <summary>
+/// Partículas leves de poeira (no pouso/pulo) e cintilação dourada (ao coletar moedas) — Fase 5 ("Juice").
+/// </summary>
+public class PlayerDustEffect2D : MonoBehaviour
+{
+    public Vector2 velocity;
+    public float duration = 0.28f;
+    public float gravity = 0f;
+    public Color baseColor = Color.white;
+
+    private float timer;
+    private SpriteRenderer sr;
+    private static Sprite cachedPuffSprite;
+
+    public static void SpawnLandingDust(Vector3 feetPosition, float intensity = 1f)
+    {
+        int count = 4;
+        for (int i = 0; i < count; i++)
+        {
+            float side = (i < 2) ? -1f : 1f;
+            float speedMag = (i % 2 == 0) ? 1.8f : 0.95f;
+            Vector2 vel = new Vector2(side * speedMag * intensity, Random.Range(0.35f, 0.95f) * intensity);
+            SpawnSinglePuff(
+                feetPosition + new Vector3(side * 0.14f, 0.04f, 0f),
+                vel,
+                duration: 0.26f,
+                gravity: -1.2f,
+                col: new Color(0.84f, 0.88f, 0.95f, 0.72f),
+                initialScale: Random.Range(0.75f, 1.15f)
+            );
+        }
+    }
+
+    public static void SpawnJumpDust(Vector3 feetPosition)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            float dx = (i - 1) * 0.9f;
+            SpawnSinglePuff(
+                feetPosition + new Vector3((i - 1) * 0.10f, 0.05f, 0f),
+                new Vector2(dx, Random.Range(0.4f, 1.0f)),
+                duration: 0.22f,
+                gravity: -0.8f,
+                col: new Color(0.88f, 0.92f, 0.98f, 0.65f),
+                initialScale: 0.80f
+            );
+        }
+    }
+
+    public static void SpawnCoinSparkles(Vector3 coinPosition)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            float angle = (i / 5f) * Mathf.PI * 2f + 0.3f;
+            Vector2 vel = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 2.2f;
+            SpawnSinglePuff(
+                coinPosition,
+                vel,
+                duration: 0.28f,
+                gravity: 2.5f,
+                col: (i % 2 == 0) ? new Color(1.00f, 0.92f, 0.32f, 0.95f) : new Color(1.00f, 0.98f, 0.78f, 0.95f),
+                initialScale: 0.70f
+            );
+        }
+    }
+
+    private static void SpawnSinglePuff(Vector3 pos, Vector2 vel, float duration, float gravity, Color col, float initialScale)
+    {
+        GameObject obj = new GameObject("JuiceDustPuff");
+        obj.transform.position = pos;
+        obj.transform.localScale = Vector3.one * initialScale;
+
+        SpriteRenderer sr = obj.AddComponent<SpriteRenderer>();
+        sr.sprite = GetPuffSprite();
+        sr.sortingOrder = 7;
+        sr.color = col;
+
+        PlayerDustEffect2D puff = obj.AddComponent<PlayerDustEffect2D>();
+        puff.velocity = vel;
+        puff.duration = duration;
+        puff.gravity = gravity;
+        puff.baseColor = col;
+        puff.sr = sr;
+    }
+
+    private void Update()
+    {
+        timer += Time.deltaTime;
+        velocity.y -= gravity * Time.deltaTime;
+        transform.position += (Vector3)(velocity * Time.deltaTime);
+
+        float t = Mathf.Clamp01(timer / duration);
+        float scale = Mathf.Lerp(1.0f, 0.25f, t);
+        transform.localScale = Vector3.one * scale;
+
+        if (sr != null)
+        {
+            sr.color = new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * (1f - t));
+        }
+
+        if (timer >= duration)
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private static Sprite GetPuffSprite()
+    {
+        if (cachedPuffSprite != null) return cachedPuffSprite;
+
+        const int s = 8;
+        Texture2D tex = PixelArtBuilder.CreateBlankTexture("DustPuff8", s, s);
+        Vector2 c = new Vector2(3.5f, 3.5f);
+        for (int y = 0; y < s; y++)
+        {
+            for (int x = 0; x < s; x++)
+            {
+                float d = Vector2.Distance(new Vector2(x, y), c);
+                tex.SetPixel(x, y, d <= 3.4f ? Color.white : Color.clear);
+            }
+        }
+        tex.Apply();
+        cachedPuffSprite = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 32f);
+        return cachedPuffSprite;
     }
 }

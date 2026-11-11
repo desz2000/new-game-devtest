@@ -5,13 +5,15 @@ public enum StageBlockStyle
     Ground = 0,
     Platform = 1,
     Obstacle = 2,
-    GoalPortal = 3
+    GoalPortal = 3,
+    SolidBlock = 4
 }
 
 public enum StageVisualTheme
 {
     NightRuins = 1,
-    DaylightMeadow = 2
+    DaylightMeadow = 2,
+    CrystalAbyss = 3
 }
 
 /// <summary>
@@ -44,6 +46,10 @@ public class PixelTileBlock2D : MonoBehaviour
     private static Sprite dayPlatformCorbelSprite;
     private static Sprite dayObstacleShaftSprite;
     private static Sprite dayPortalArchSprite;
+
+    // Sprites do Tema Neve Alpina (Fase 3)
+    private static Sprite snowGroundTopSprite;
+    private static Sprite snowPlatformSlabSprite;
 
     private float animTimer;
 
@@ -81,7 +87,9 @@ public class PixelTileBlock2D : MonoBehaviour
                     float alpha = 0.28f + Mathf.Sin(animTimer * 2.8f) * 0.08f;
                     sr.color = visualTheme == StageVisualTheme.DaylightMeadow
                         ? new Color(1.00f, 0.88f, 0.28f, alpha + 0.06f)
-                        : new Color(0.22f, 0.96f, 0.72f, alpha);
+                        : (visualTheme == StageVisualTheme.CrystalAbyss
+                            ? new Color(0.62f, 0.50f, 1.00f, alpha + 0.04f)
+                            : new Color(0.22f, 0.96f, 0.72f, alpha));
                 }
             }
         }
@@ -133,11 +141,51 @@ public class PixelTileBlock2D : MonoBehaviour
                 BuildPlatformVisuals();
                 break;
             case StageBlockStyle.Obstacle:
+                if (GetComponent<Hazard2D>() == null)
+                {
+                    Hazard2D hazard = gameObject.AddComponent<Hazard2D>();
+                    hazard.damage = 1;
+                    hazard.stompable = false;
+                    hazard.blocksGroundCheck = true;
+                }
                 BuildObstacleVisuals();
                 break;
             case StageBlockStyle.GoalPortal:
+                if (GetComponent<Goal2D>() == null)
+                {
+                    gameObject.AddComponent<Goal2D>();
+                }
                 BuildGoalPortalVisuals();
                 break;
+            case StageBlockStyle.SolidBlock:
+                Hazard2D accidentalHazard = GetComponent<Hazard2D>();
+                if (accidentalHazard != null)
+                {
+                    if (Application.isPlaying) Destroy(accidentalHazard);
+                    else DestroyImmediate(accidentalHazard);
+                }
+                BuildSolidBlockVisuals();
+                break;
+        }
+
+        ApplyThemeTint();
+    }
+
+    private void ApplyThemeTint()
+    {
+        if (visualTheme != StageVisualTheme.CrystalAbyss) return;
+
+        foreach (SpriteRenderer sr in GetComponentsInChildren<SpriteRenderer>(true))
+        {
+            string n = sr.gameObject.name;
+            if (!n.StartsWith("Visual_")) continue;
+            if (n.Contains("Aura")) continue;
+
+            if (n.Contains("TopCap") || n.Contains("PlatformSlab") || n.Contains("SolidBlockTop")) sr.color = Color.white;
+            else if (n.Contains("ObstacleCrown")) sr.color = new Color(0.55f, 0.92f, 1.00f, 1f);
+            else if (n.Contains("ObstacleShaft")) sr.color = new Color(0.75f, 0.88f, 1.00f, 1f);
+            else if (n.Contains("PortalCore")) sr.color = new Color(0.62f, 0.92f, 1.00f, 1f);
+            else sr.color = new Color(0.78f, 0.84f, 0.98f, 1f);
         }
     }
 
@@ -174,12 +222,12 @@ public class PixelTileBlock2D : MonoBehaviour
             sr.size = new Vector2(w, bodyH);
         }
 
-        GameObject top = CreateVisualChild("Visual_TopCapTiles", new Vector3(0f, (h * 0.5f) - (topH * 0.5f), 0f), sortingOrder: 2);
+        GameObject top = CreateVisualChild("Visual_TopCapTiles", new Vector3(0f, (h * 0.5f) - (topH * 0.5f) + 0.03f, 0f), sortingOrder: 2);
         SpriteRenderer topSr = top.GetComponent<SpriteRenderer>();
-        topSr.sprite = isDay ? dayGroundTopSprite : groundTopSprite;
+        topSr.sprite = isDay ? dayGroundTopSprite : (visualTheme == StageVisualTheme.CrystalAbyss ? snowGroundTopSprite : groundTopSprite);
         topSr.drawMode = SpriteDrawMode.Tiled;
         topSr.tileMode = SpriteTileMode.Continuous;
-        topSr.size = new Vector2(w, topH);
+        topSr.size = new Vector2(w, topH + 0.06f);
 
         // Bordas esculpidas de penhasco nas duas extremidades
         GameObject leftTrim = CreateVisualChild("Visual_LeftCliff", new Vector3(-w * 0.5f + 0.16f, 0f, 0f), sortingOrder: 3);
@@ -206,7 +254,7 @@ public class PixelTileBlock2D : MonoBehaviour
 
         GameObject slab = CreateVisualChild("Visual_PlatformSlab", Vector3.zero, sortingOrder: 2);
         SpriteRenderer sr = slab.GetComponent<SpriteRenderer>();
-        sr.sprite = isDay ? dayPlatformSlabSprite : platformSlabSprite;
+        sr.sprite = isDay ? dayPlatformSlabSprite : (visualTheme == StageVisualTheme.CrystalAbyss ? snowPlatformSlabSprite : platformSlabSprite);
         sr.drawMode = SpriteDrawMode.Tiled;
         sr.tileMode = SpriteTileMode.Continuous;
         sr.size = new Vector2(w, h);
@@ -225,33 +273,56 @@ public class PixelTileBlock2D : MonoBehaviour
         sr.flipX = flipX;
     }
 
+    private void BuildSolidBlockVisuals()
+    {
+        bool isDay = (visualTheme == StageVisualTheme.DaylightMeadow);
+        float w = Mathf.Max(0.8f, blockSize.x);
+        float h = Mathf.Max(0.8f, blockSize.y);
+
+        GameObject body = CreateVisualChild("Visual_SolidBlockBody", new Vector3(0f, -0.03f, 0f), sortingOrder: 2);
+        SpriteRenderer bodySr = body.GetComponent<SpriteRenderer>();
+        bodySr.sprite = isDay ? dayGroundBodySprite : groundBodySprite;
+        bodySr.drawMode = SpriteDrawMode.Tiled;
+        bodySr.tileMode = SpriteTileMode.Continuous;
+        bodySr.size = new Vector2(w, h + 0.06f);
+
+        float capH = Mathf.Min(0.42f, h * 0.45f);
+        GameObject topCap = CreateVisualChild("Visual_SolidBlockTop", new Vector3(0f, h * 0.5f - capH * 0.5f + 0.02f, 0f), sortingOrder: 3);
+        SpriteRenderer topSr = topCap.GetComponent<SpriteRenderer>();
+        topSr.sprite = isDay ? dayPlatformSlabSprite : (visualTheme == StageVisualTheme.CrystalAbyss ? snowPlatformSlabSprite : platformSlabSprite);
+        topSr.drawMode = SpriteDrawMode.Tiled;
+        topSr.tileMode = SpriteTileMode.Continuous;
+        topSr.size = new Vector2(w + 0.04f, capH);
+    }
+
     private void BuildObstacleVisuals()
     {
         bool isDay = (visualTheme == StageVisualTheme.DaylightMeadow);
         float w = Mathf.Max(0.4f, blockSize.x);
-        float h = Mathf.Max(0.5f, blockSize.y);
+        float h = Mathf.Max(0.45f, blockSize.y);
 
-        float crownH = Mathf.Min(0.55f, h * 0.55f);
-        float shaftH = Mathf.Max(0.2f, h - crownH * 0.65f);
+        // Base baixa de ferro/obsidiana cravada no solo + coroa de espinhos rubi bem destacada (Espinhos != Bloco Sólido)
+        float crownH = Mathf.Clamp(h * 0.78f, 0.42f, 0.72f);
+        float baseH = Mathf.Max(0.18f, h - crownH * 0.65f) + 0.08f;
 
-        GameObject shaft = CreateVisualChild("Visual_ObstacleShaft", new Vector3(0f, -h * 0.5f + shaftH * 0.5f, 0f), sortingOrder: 2);
+        GameObject shaft = CreateVisualChild("Visual_ObstacleShaft", new Vector3(0f, -h * 0.5f + baseH * 0.5f - 0.06f, 0f), sortingOrder: 2);
         SpriteRenderer shaftSr = shaft.GetComponent<SpriteRenderer>();
         shaftSr.sprite = isDay ? dayObstacleShaftSprite : obstacleShaftSprite;
         shaftSr.drawMode = SpriteDrawMode.Tiled;
         shaftSr.tileMode = SpriteTileMode.Continuous;
-        shaftSr.size = new Vector2(w, shaftH);
+        shaftSr.size = new Vector2(w, baseH);
 
-        GameObject crown = CreateVisualChild("Visual_ObstacleCrown", new Vector3(0f, h * 0.5f - crownH * 0.5f + 0.05f, 0f), sortingOrder: 3);
+        GameObject crown = CreateVisualChild("Visual_ObstacleCrown", new Vector3(0f, -h * 0.5f + baseH * 0.55f + crownH * 0.42f, 0f), sortingOrder: 3);
         SpriteRenderer crownSr = crown.GetComponent<SpriteRenderer>();
         crownSr.sprite = obstacleCrownSprite;
-        crown.transform.localScale = new Vector3(w * 1.08f, crownH / 0.55f, 1f);
+        crown.transform.localScale = new Vector3(w * 1.12f, crownH / 0.55f, 1f);
 
-        // Halo sutil avermelhado atrás do monólito amaldiçoado
-        GameObject aura = CreateVisualChild("Visual_ObstacleAura", new Vector3(0f, 0.05f, 0f), sortingOrder: 0);
+        // Halo sutil avermelhado atrás dos espinhos
+        GameObject aura = CreateVisualChild("Visual_ObstacleAura", new Vector3(0f, 0.02f, 0f), sortingOrder: 0);
         SpriteRenderer auraSr = aura.GetComponent<SpriteRenderer>();
         auraSr.sprite = glowCircleSprite;
         auraSr.color = isDay ? new Color(1.00f, 0.28f, 0.14f, 0.30f) : new Color(0.95f, 0.16f, 0.28f, 0.24f);
-        aura.transform.localScale = new Vector3(w * 2.1f, h * 1.55f, 1f);
+        aura.transform.localScale = new Vector3(w * 2.0f, h * 1.45f, 1f);
     }
 
     private void BuildGoalPortalVisuals()
@@ -265,19 +336,19 @@ public class PixelTileBlock2D : MonoBehaviour
         auraSr.color = isDay ? new Color(1.00f, 0.88f, 0.28f, 0.36f) : new Color(0.22f, 0.96f, 0.72f, 0.30f);
         aura.transform.localScale = new Vector3(3.6f, 4.8f, 1f);
 
-        // Núcleo dimensional animado
-        GameObject core = CreateVisualChild("Visual_PortalCore", new Vector3(0f, -0.15f, 0f), sortingOrder: 2);
+        // Núcleo dimensional animado ancorado até a base no chão
+        GameObject core = CreateVisualChild("Visual_PortalCore", new Vector3(0f, -0.26f, 0f), sortingOrder: 2);
         SpriteRenderer coreSr = core.GetComponent<SpriteRenderer>();
         coreSr.sprite = portalCoreSprites[0];
         coreSr.drawMode = SpriteDrawMode.Tiled;
         coreSr.tileMode = SpriteTileMode.Continuous;
-        coreSr.size = new Vector2(1.05f, 2.85f);
+        coreSr.size = new Vector2(1.05f, 3.45f);
 
-        // Arco antigo de pedra com runas (moldura Duck Souls x Celeste)
-        GameObject arch = CreateVisualChild("Visual_PortalArch", new Vector3(0f, -0.05f, 0f), sortingOrder: 3);
+        // Arco antigo de pedra com runas cravado firme no solo
+        GameObject arch = CreateVisualChild("Visual_PortalArch", new Vector3(0f, -0.02f, 0f), sortingOrder: 3);
         SpriteRenderer archSr = arch.GetComponent<SpriteRenderer>();
         archSr.sprite = isDay ? dayPortalArchSprite : portalArchSprite;
-        arch.transform.localScale = new Vector3(1.18f, 1.18f, 1f);
+        arch.transform.localScale = new Vector3(1.18f, 1.21f, 1f);
     }
 
     private GameObject CreateVisualChild(string name, Vector3 localPos, int sortingOrder)
@@ -293,21 +364,24 @@ public class PixelTileBlock2D : MonoBehaviour
     private static void EnsureSprites()
     {
         if (groundBodySprite == null) groundBodySprite = BuildGroundBodySprite(isDay: false);
-        if (groundTopSprite == null) groundTopSprite = BuildGroundTopSprite(isDay: false);
+        if (groundTopSprite == null) groundTopSprite = BuildGroundTopSprite(StageVisualTheme.NightRuins);
         if (groundEdgeCapSprite == null) groundEdgeCapSprite = BuildGroundEdgeCapSprite(isDay: false);
-        if (platformSlabSprite == null) platformSlabSprite = BuildPlatformSlabSprite(isDay: false);
+        if (platformSlabSprite == null) platformSlabSprite = BuildPlatformSlabSprite(StageVisualTheme.NightRuins);
         if (platformCorbelSprite == null) platformCorbelSprite = BuildPlatformCorbelSprite(isDay: false);
         if (obstacleShaftSprite == null) obstacleShaftSprite = BuildObstacleShaftSprite(isDay: false);
         if (obstacleCrownSprite == null) obstacleCrownSprite = BuildObstacleCrownSprite();
         if (portalArchSprite == null) portalArchSprite = BuildPortalArchSprite(isDay: false);
 
         if (dayGroundBodySprite == null) dayGroundBodySprite = BuildGroundBodySprite(isDay: true);
-        if (dayGroundTopSprite == null) dayGroundTopSprite = BuildGroundTopSprite(isDay: true);
+        if (dayGroundTopSprite == null) dayGroundTopSprite = BuildGroundTopSprite(StageVisualTheme.DaylightMeadow);
         if (dayGroundEdgeCapSprite == null) dayGroundEdgeCapSprite = BuildGroundEdgeCapSprite(isDay: true);
-        if (dayPlatformSlabSprite == null) dayPlatformSlabSprite = BuildPlatformSlabSprite(isDay: true);
+        if (dayPlatformSlabSprite == null) dayPlatformSlabSprite = BuildPlatformSlabSprite(StageVisualTheme.DaylightMeadow);
         if (dayPlatformCorbelSprite == null) dayPlatformCorbelSprite = BuildPlatformCorbelSprite(isDay: true);
         if (dayObstacleShaftSprite == null) dayObstacleShaftSprite = BuildObstacleShaftSprite(isDay: true);
         if (dayPortalArchSprite == null) dayPortalArchSprite = BuildPortalArchSprite(isDay: true);
+
+        if (snowGroundTopSprite == null) snowGroundTopSprite = BuildGroundTopSprite(StageVisualTheme.CrystalAbyss);
+        if (snowPlatformSlabSprite == null) snowPlatformSlabSprite = BuildPlatformSlabSprite(StageVisualTheme.CrystalAbyss);
 
         if (portalCoreSprites == null || portalCoreSprites.Length == 0 || portalCoreSprites[0] == null)
         {
@@ -390,21 +464,24 @@ public class PixelTileBlock2D : MonoBehaviour
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 32f, 0, SpriteMeshType.FullRect);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: true);
     }
 
-    private static Sprite BuildGroundTopSprite(bool isDay)
+    private static Sprite BuildGroundTopSprite(StageVisualTheme theme)
     {
-        // Textura 64x32 com musgo azul-esmeralda (Noturno) ou grama verde-primavera alegre com florzinhas (Diurno)
+        bool isDay = (theme == StageVisualTheme.DaylightMeadow);
+        bool isSnow = (theme == StageVisualTheme.CrystalAbyss);
+        // Textura 64x32 com musgo azul-esmeralda (Noturno), grama alegre (Diurno) ou neve espessa alpina (Fase 3)
         const int w = 64;
         const int h = 32;
-        Texture2D tex = PixelArtBuilder.CreateBlankTexture(isDay ? "GroundTopDay64x32_Tile" : "GroundTop64x32_Tile", w, h, TextureWrapMode.Repeat);
+        string texName = isDay ? "GroundTopDay64x32_Tile" : (isSnow ? "GroundTopSnow64x32_Tile" : "GroundTop64x32_Tile");
+        Texture2D tex = PixelArtBuilder.CreateBlankTexture(texName, w, h, TextureWrapMode.Repeat);
 
-        Color outline = isDay ? new Color(0.14f, 0.24f, 0.12f, 1f) : new Color(0.06f, 0.08f, 0.14f, 1f);
-        Color mossDark = isDay ? new Color(0.16f, 0.56f, 0.24f, 1f) : new Color(0.12f, 0.30f, 0.31f, 1f);
-        Color mossMid = isDay ? new Color(0.26f, 0.76f, 0.34f, 1f) : new Color(0.19f, 0.47f, 0.45f, 1f);
-        Color mossBright = isDay ? new Color(0.45f, 0.90f, 0.44f, 1f) : new Color(0.32f, 0.70f, 0.61f, 1f);
-        Color mossTip = isDay ? new Color(0.72f, 0.98f, 0.54f, 1f) : new Color(0.54f, 0.88f, 0.75f, 1f);
+        Color outline = isDay ? new Color(0.14f, 0.24f, 0.12f, 1f) : (isSnow ? new Color(0.10f, 0.16f, 0.28f, 1f) : new Color(0.06f, 0.08f, 0.14f, 1f));
+        Color mossDark = isDay ? new Color(0.16f, 0.56f, 0.24f, 1f) : (isSnow ? new Color(0.46f, 0.72f, 0.92f, 1f) : new Color(0.12f, 0.30f, 0.31f, 1f));
+        Color mossMid = isDay ? new Color(0.26f, 0.76f, 0.34f, 1f) : (isSnow ? new Color(0.74f, 0.89f, 0.98f, 1f) : new Color(0.19f, 0.47f, 0.45f, 1f));
+        Color mossBright = isDay ? new Color(0.45f, 0.90f, 0.44f, 1f) : (isSnow ? new Color(0.90f, 0.96f, 1.00f, 1f) : new Color(0.32f, 0.70f, 0.61f, 1f));
+        Color mossTip = isDay ? new Color(0.72f, 0.98f, 0.54f, 1f) : (isSnow ? new Color(0.98f, 0.99f, 1.00f, 1f) : new Color(0.54f, 0.88f, 0.75f, 1f));
 
         Color stoneDark = isDay ? new Color(0.68f, 0.55f, 0.38f, 1f) : new Color(0.13f, 0.16f, 0.26f, 1f);
         Color stoneMid = isDay ? new Color(0.84f, 0.73f, 0.55f, 1f) : new Color(0.22f, 0.26f, 0.40f, 1f);
@@ -418,8 +495,8 @@ public class PixelTileBlock2D : MonoBehaviour
         for (int x = 0; x < w; x++)
         {
             float nCol = PixelArtBuilder.Hash01(x, 7, 303);
-            int overhang = 21 + Mathf.RoundToInt(Mathf.Sin(x * 0.45f) * 2.2f + (nCol - 0.5f) * 3.0f);
-            int topGrassStart = 30 - (nCol > 0.75f ? 0 : 1);
+            int overhang = 22 + Mathf.RoundToInt(Mathf.Sin(x * 0.45f) * 2.0f + (nCol - 0.5f) * 2.5f);
+            int topGrassStart = 31;
 
             for (int y = 0; y < h; y++)
             {
@@ -483,7 +560,7 @@ public class PixelTileBlock2D : MonoBehaviour
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f, 0, SpriteMeshType.FullRect);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: true);
     }
 
     private static Sprite BuildGroundEdgeCapSprite(bool isDay)
@@ -508,22 +585,25 @@ public class PixelTileBlock2D : MonoBehaviour
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f, 0, SpriteMeshType.FullRect);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: false);
     }
 
-    private static Sprite BuildPlatformSlabSprite(bool isDay)
+    private static Sprite BuildPlatformSlabSprite(StageVisualTheme theme)
     {
+        bool isDay = (theme == StageVisualTheme.DaylightMeadow);
+        bool isSnow = (theme == StageVisualTheme.CrystalAbyss);
         const int w = 32;
         const int h = 16;
-        Texture2D tex = PixelArtBuilder.CreateBlankTexture(isDay ? "PlatformSlabDay32x16" : "PlatformSlab32x16", w, h, TextureWrapMode.Repeat);
+        string texName = isDay ? "PlatformSlabDay32x16" : (isSnow ? "PlatformSlabSnow32x16" : "PlatformSlab32x16");
+        Texture2D tex = PixelArtBuilder.CreateBlankTexture(texName, w, h, TextureWrapMode.Repeat);
 
-        Color outline = isDay ? new Color(0.22f, 0.18f, 0.12f, 1f) : new Color(0.06f, 0.08f, 0.14f, 1f);
-        Color mossTop = isDay ? new Color(0.46f, 0.92f, 0.44f, 1f) : new Color(0.32f, 0.74f, 0.64f, 1f);
-        Color mossDeep = isDay ? new Color(0.22f, 0.68f, 0.30f, 1f) : new Color(0.16f, 0.42f, 0.40f, 1f);
+        Color outline = isDay ? new Color(0.22f, 0.18f, 0.12f, 1f) : new Color(0.08f, 0.12f, 0.20f, 1f);
+        Color mossTop = isDay ? new Color(0.46f, 0.92f, 0.44f, 1f) : (isSnow ? new Color(0.95f, 0.99f, 1.00f, 1f) : new Color(0.32f, 0.74f, 0.64f, 1f));
+        Color mossDeep = isDay ? new Color(0.22f, 0.68f, 0.30f, 1f) : (isSnow ? new Color(0.68f, 0.86f, 0.98f, 1f) : new Color(0.16f, 0.42f, 0.40f, 1f));
         Color stoneRim = isDay ? new Color(0.98f, 0.92f, 0.78f, 1f) : new Color(0.52f, 0.62f, 0.80f, 1f);
         Color stoneMid = isDay ? new Color(0.84f, 0.74f, 0.56f, 1f) : new Color(0.25f, 0.31f, 0.46f, 1f);
         Color stoneDark = isDay ? new Color(0.66f, 0.54f, 0.38f, 1f) : new Color(0.14f, 0.17f, 0.27f, 1f);
-        Color runeCyan = isDay ? new Color(1.00f, 0.84f, 0.22f, 1f) : new Color(0.24f, 0.90f, 0.96f, 1f);
+        Color runeCyan = isDay ? new Color(1.00f, 0.84f, 0.22f, 1f) : (isSnow ? new Color(0.62f, 0.96f, 1.00f, 1f) : new Color(0.24f, 0.90f, 0.96f, 1f));
 
         for (int y = 0; y < h; y++)
         {
@@ -562,7 +642,7 @@ public class PixelTileBlock2D : MonoBehaviour
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f, 0, SpriteMeshType.FullRect);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: true);
     }
 
     private static Sprite BuildPlatformCorbelSprite(bool isDay)
@@ -591,7 +671,7 @@ public class PixelTileBlock2D : MonoBehaviour
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 32f);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: false);
     }
 
     private static Sprite BuildObstacleShaftSprite(bool isDay)
@@ -645,7 +725,7 @@ public class PixelTileBlock2D : MonoBehaviour
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f, 0, SpriteMeshType.FullRect);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: true);
     }
 
     private static Sprite BuildObstacleCrownSprite()
@@ -699,7 +779,7 @@ public class PixelTileBlock2D : MonoBehaviour
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: false);
     }
 
     private static Sprite BuildPortalArchSprite(bool isDay)
@@ -771,7 +851,7 @@ public class PixelTileBlock2D : MonoBehaviour
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: false);
     }
 
     private static Sprite BuildPortalCoreSprite(int phase)
@@ -815,7 +895,7 @@ public class PixelTileBlock2D : MonoBehaviour
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f, 0, SpriteMeshType.FullRect);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: true);
     }
 
     private static Sprite BuildGlowSprite()
@@ -869,6 +949,12 @@ public class ParallaxBackdrop2D : MonoBehaviour
     private static Sprite dayMidRuinsSprite;
     private static Sprite dayNearMistSprite;
 
+    // Sprites Montanhas de Neve da Fase 3 (Picos Nevados)
+    private static Sprite snowSkySprite;
+    private static Sprite snowFarMountainSprite;
+    private static Sprite snowMidHillsSprite;
+    private static Sprite snowNearMistSprite;
+
     private void OnEnable()
     {
         EnsureBuilt();
@@ -888,9 +974,9 @@ public class ParallaxBackdrop2D : MonoBehaviour
             skyLayer.position = new Vector3(camPos.x, camPos.y, 10f);
         }
 
-        UpdateParallaxRow(farChunks, camPos, parallaxX: 0.14f, parallaxY: 0.08f, baseY: 1.5f);
-        UpdateParallaxRow(midChunks, camPos, parallaxX: 0.34f, parallaxY: 0.16f, baseY: 0.2f);
-        UpdateParallaxRow(nearChunks, camPos, parallaxX: 0.58f, parallaxY: 0.28f, baseY: -0.6f);
+        UpdateParallaxRow(farChunks, camPos, parallaxX: 0.14f, parallaxY: 0.06f, baseY: -0.35f);
+        UpdateParallaxRow(midChunks, camPos, parallaxX: 0.34f, parallaxY: 0.12f, baseY: -1.05f);
+        UpdateParallaxRow(nearChunks, camPos, parallaxX: 0.58f, parallaxY: 0.18f, baseY: -1.55f);
     }
 
     private void UpdateParallaxRow(Transform[] chunks, Vector3 camPos, float parallaxX, float parallaxY, float baseY)
@@ -919,6 +1005,7 @@ public class ParallaxBackdrop2D : MonoBehaviour
     public void EnsureBuilt()
     {
         bool isDay = (visualTheme == StageVisualTheme.DaylightMeadow);
+        bool isSnow = (visualTheme == StageVisualTheme.CrystalAbyss);
 
         if (skySprite == null) skySprite = BuildSkySprite(isDay: false);
         if (farMountainSprite == null) farMountainSprite = BuildFarMountainSprite(isDay: false);
@@ -929,6 +1016,11 @@ public class ParallaxBackdrop2D : MonoBehaviour
         if (dayFarMountainSprite == null) dayFarMountainSprite = BuildFarMountainSprite(isDay: true);
         if (dayMidRuinsSprite == null) dayMidRuinsSprite = BuildMidRuinsSprite(isDay: true);
         if (dayNearMistSprite == null) dayNearMistSprite = BuildNearMistSprite(isDay: true);
+
+        if (snowSkySprite == null) snowSkySprite = BuildSnowSkySprite();
+        if (snowFarMountainSprite == null) snowFarMountainSprite = BuildSnowFarMountainSprite();
+        if (snowMidHillsSprite == null) snowMidHillsSprite = BuildSnowMidHillsSprite();
+        if (snowNearMistSprite == null) snowNearMistSprite = BuildSnowNearMistSprite();
 
         if (skyLayer != null && farChunks != null && farChunks.Length == 3 && farChunks[0] != null && builtTheme == visualTheme)
         {
@@ -947,14 +1039,14 @@ public class ParallaxBackdrop2D : MonoBehaviour
         GameObject skyObj = new GameObject("Parallax_Sky");
         skyObj.transform.SetParent(transform, false);
         SpriteRenderer skySr = skyObj.AddComponent<SpriteRenderer>();
-        skySr.sprite = isDay ? daySkySprite : skySprite;
+        skySr.sprite = isDay ? daySkySprite : (isSnow ? snowSkySprite : skySprite);
         skySr.sortingOrder = -50;
         skyObj.transform.localScale = new Vector3(3.2f, 2.8f, 1f);
         skyLayer = skyObj.transform;
 
-        farChunks = CreateRow("Parallax_FarMountains", isDay ? dayFarMountainSprite : farMountainSprite, -40);
-        midChunks = CreateRow("Parallax_MidRuins", isDay ? dayMidRuinsSprite : midRuinsSprite, -30);
-        nearChunks = CreateRow("Parallax_NearMist", isDay ? dayNearMistSprite : nearMistSprite, -20);
+        farChunks = CreateRow("Parallax_FarMountains", isDay ? dayFarMountainSprite : (isSnow ? snowFarMountainSprite : farMountainSprite), -40);
+        midChunks = CreateRow("Parallax_MidRuins", isDay ? dayMidRuinsSprite : (isSnow ? snowMidHillsSprite : midRuinsSprite), -30);
+        nearChunks = CreateRow("Parallax_NearMist", isDay ? dayNearMistSprite : (isSnow ? snowNearMistSprite : nearMistSprite), -20);
     }
 
     private Transform[] CreateRow(string prefix, Sprite sprite, int sortingOrder)
@@ -1203,24 +1295,220 @@ public class ParallaxBackdrop2D : MonoBehaviour
         for (int x = 0; x < w; x++)
         {
             int colMod = x % 256;
-            bool inColumn = (colMod >= 40 && colMod <= 54);
-            bool inChain = (colMod == 168);
+            bool inLowWall = (colMod >= 36 && colMod <= 56);
+            int battlementTop = ((x / 4) % 2 == 0) ? 64 : 58;
 
             for (int y = 0; y < h; y++)
             {
-                if (inColumn && y < 130)
-                {
-                    tex.SetPixel(x, y, pillar);
-                }
-                else if (inChain && y > 84 && (y % 4 != 0))
+                if (inLowWall && y <= battlementTop)
                 {
                     tex.SetPixel(x, y, pillar);
                 }
                 else if (y < 46)
                 {
                     float wave = Mathf.Sin(x * 0.05f) * 6f;
-                    if (y < 22 + wave) tex.SetPixel(x, y, mist);
-                    else if (y < 36 + wave && ((x + y) % 2 == 0)) tex.SetPixel(x, y, mistSoft);
+                    if (y < 24 + wave) tex.SetPixel(x, y, mist);
+                    else if (y < 38 + wave && ((x + y) % 2 == 0)) tex.SetPixel(x, y, mistSoft);
+                    else tex.SetPixel(x, y, Color.clear);
+                }
+                else
+                {
+                    tex.SetPixel(x, y, Color.clear);
+                }
+            }
+        }
+
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f);
+    }
+
+    private static Sprite BuildSnowSkySprite()
+    {
+        const int w = 256;
+        const int h = 144;
+        Texture2D tex = PixelArtBuilder.CreateBlankTexture("SnowMountain_Sky256", w, h);
+
+        Color cTop = new Color(0.05f, 0.08f, 0.20f, 1f);
+        Color cMid = new Color(0.10f, 0.17f, 0.36f, 1f);
+        Color cLow = new Color(0.18f, 0.30f, 0.54f, 1f);
+        Color cHorizon = new Color(0.32f, 0.48f, 0.72f, 1f);
+        Vector2 moonCenter = new Vector2(194f, 110f);
+
+        for (int y = 0; y < h; y++)
+        {
+            float t = y / (float)(h - 1);
+            for (int x = 0; x < w; x++)
+            {
+                float dither = (((x + y) & 1) == 0 ? 0.03f : -0.03f);
+                float td = Mathf.Clamp01(1f - t + dither);
+
+                Color sky;
+                if (td < 0.38f) sky = Color.Lerp(cTop, cMid, Mathf.Floor((td / 0.38f) * 5f) / 5f);
+                else if (td < 0.72f) sky = Color.Lerp(cMid, cLow, Mathf.Floor(((td - 0.38f) / 0.34f) * 5f) / 5f);
+                else sky = Color.Lerp(cLow, cHorizon, Mathf.Floor(((td - 0.72f) / 0.28f) * 4f) / 4f);
+
+                // Aurora boreal discreta no céu alpino
+                float auroraBand = 98f + Mathf.Sin(x * 0.045f) * 10f + Mathf.Cos(x * 0.02f) * 6f;
+                float distAurora = Mathf.Abs(y - auroraBand);
+                if (distAurora < 14f)
+                {
+                    float a = Mathf.Floor((1f - distAurora / 14f) * 3f) / 3f * 0.22f;
+                    Color auroraCol = (x % 60 < 30)
+                        ? new Color(0.35f, 0.95f, 0.85f, 1f)
+                        : new Color(0.55f, 0.72f, 1.00f, 1f);
+                    sky = Color.Lerp(sky, auroraCol, a);
+                }
+
+                float starN = PixelArtBuilder.Hash01(x, y, 3033);
+                if (t > 0.36f && starN > 0.993f)
+                {
+                    sky = (starN > 0.997f) ? new Color(0.94f, 0.98f, 1.00f, 1f) : new Color(0.68f, 0.82f, 0.98f, 1f);
+                }
+
+                float distMoon = Vector2.Distance(new Vector2(x, y), moonCenter);
+                if (distMoon <= 10f)
+                {
+                    sky = distMoon <= 7.5f ? new Color(0.95f, 0.98f, 1.00f, 1f) : new Color(0.76f, 0.90f, 1.00f, 1f);
+                }
+                else if (distMoon <= 26f)
+                {
+                    float glow = (1f - distMoon / 26f) * 0.20f;
+                    sky = Color.Lerp(sky, new Color(0.62f, 0.84f, 1.00f, 1f), glow);
+                }
+
+                tex.SetPixel(x, y, sky);
+            }
+        }
+
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 20f);
+    }
+
+    private static Sprite BuildSnowFarMountainSprite()
+    {
+        const int w = 512;
+        const int h = 192;
+        Texture2D tex = PixelArtBuilder.CreateBlankTexture("SnowFarMountains512", w, h, TextureWrapMode.Repeat);
+
+        Color rockDark = new Color(0.14f, 0.20f, 0.34f, 1f);
+        Color rockMid = new Color(0.22f, 0.31f, 0.48f, 1f);
+        Color snowShadow = new Color(0.66f, 0.82f, 0.96f, 1f);
+        Color snowBright = new Color(0.94f, 0.98f, 1.00f, 1f);
+
+        for (int x = 0; x < w; x++)
+        {
+            float rad = (x / (float)w) * Mathf.PI * 2f;
+            // Picos alpinos altos e recortados (sem torres de castelo)
+            float peakA = 96f + Mathf.Abs(Mathf.Sin(rad * 2f + 0.3f)) * 68f + Mathf.Cos(rad * 5f) * 14f;
+            float peakB = 82f + Mathf.Abs(Mathf.Cos(rad * 3f + 0.9f)) * 54f;
+            int height = Mathf.Clamp(Mathf.RoundToInt(Mathf.Max(peakA, peakB)), 1, h - 2);
+            int slope = Mathf.RoundToInt(Mathf.Sin(rad * 8f) * 6f);
+            int snowLine = height - 28 - slope;
+
+            for (int y = 0; y < h; y++)
+            {
+                if (y > height)
+                {
+                    tex.SetPixel(x, y, Color.clear);
+                }
+                else if (y >= snowLine)
+                {
+                    bool sunSide = ((x % 128) < 64);
+                    tex.SetPixel(x, y, (y >= height - 6 || sunSide) ? snowBright : snowShadow);
+                }
+                else
+                {
+                    bool ridgeFace = ((x % 96) < 42);
+                    tex.SetPixel(x, y, ridgeFace ? rockMid : rockDark);
+                }
+            }
+        }
+
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f);
+    }
+
+    private static Sprite BuildSnowMidHillsSprite()
+    {
+        const int w = 512;
+        const int h = 160;
+        Texture2D tex = PixelArtBuilder.CreateBlankTexture("SnowMidHills512", w, h, TextureWrapMode.Repeat);
+
+        Color ridgeRock = new Color(0.18f, 0.27f, 0.42f, 1f);
+        Color snowSlope = new Color(0.76f, 0.89f, 0.98f, 1f);
+        Color snowCrest = new Color(0.95f, 0.99f, 1.00f, 1f);
+        Color pineBase = new Color(0.10f, 0.22f, 0.32f, 1f);
+        Color pineSnow = new Color(0.86f, 0.95f, 1.00f, 1f);
+
+        for (int x = 0; x < w; x++)
+        {
+            float rad = (x / (float)w) * Mathf.PI * 2f;
+            int hillH = Mathf.RoundToInt(58f + Mathf.Sin(rad * 2f + 0.8f) * 20f + Mathf.Abs(Mathf.Sin(rad * 4f)) * 16f);
+
+            int treeMod = (x + 24) % 56;
+            int treeCenterDist = Mathf.Abs(treeMod - 28);
+            int pineTop = hillH + 26 + ((x / 56) % 2) * 10;
+
+            for (int y = 0; y < h; y++)
+            {
+                bool drawPine = false;
+                bool isSnowyTip = false;
+                if (y <= pineTop && y > hillH - 4)
+                {
+                    int tier = (pineTop - y) % 12;
+                    int tierW = Mathf.Max(1, tier / 2 + (pineTop - y) / 7);
+                    if (treeCenterDist <= tierW)
+                    {
+                        drawPine = true;
+                        isSnowyTip = (tier <= 3);
+                    }
+                }
+
+                if (y <= hillH)
+                {
+                    if (y >= hillH - 4) tex.SetPixel(x, y, snowCrest);
+                    else if (y >= hillH - 16) tex.SetPixel(x, y, snowSlope);
+                    else tex.SetPixel(x, y, ridgeRock);
+                }
+                else if (drawPine)
+                {
+                    tex.SetPixel(x, y, isSnowyTip ? pineSnow : pineBase);
+                }
+                else
+                {
+                    tex.SetPixel(x, y, Color.clear);
+                }
+            }
+        }
+
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f);
+    }
+
+    private static Sprite BuildSnowNearMistSprite()
+    {
+        const int w = 512;
+        const int h = 144;
+        Texture2D tex = PixelArtBuilder.CreateBlankTexture("SnowNearMist512", w, h, TextureWrapMode.Repeat);
+
+        Color mist = new Color(0.84f, 0.94f, 1.00f, 0.24f);
+        Color mistSoft = new Color(0.84f, 0.94f, 1.00f, 0.11f);
+        Color drift = new Color(0.86f, 0.94f, 1.00f, 0.85f);
+
+        for (int x = 0; x < w; x++)
+        {
+            float driftH = 20f + Mathf.Sin(x * 0.04f) * 8f + Mathf.Cos(x * 0.11f) * 3f;
+            for (int y = 0; y < h; y++)
+            {
+                if (y < driftH)
+                {
+                    tex.SetPixel(x, y, drift);
+                }
+                else if (y < 48)
+                {
+                    float wave = Mathf.Sin(x * 0.05f) * 6f;
+                    if (y < 28 + wave) tex.SetPixel(x, y, mist);
+                    else if (y < 40 + wave && ((x + y) % 2 == 0)) tex.SetPixel(x, y, mistSoft);
                     else tex.SetPixel(x, y, Color.clear);
                 }
                 else
@@ -1260,7 +1548,8 @@ public class TorchFlicker2D : MonoBehaviour
         timer += Time.deltaTime * 9f;
         if (torchSr != null && torchFrames != null && torchFrames.Length > 0)
         {
-            int idx = Mathf.FloorToInt(timer + transform.position.x) % torchFrames.Length;
+            int len = torchFrames.Length;
+            int idx = ((Mathf.FloorToInt(timer + transform.position.x) % len) + len) % len;
             torchSr.sprite = torchFrames[idx];
         }
         if (glowSr != null)
@@ -1356,7 +1645,7 @@ public class TorchFlicker2D : MonoBehaviour
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 32f);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: false);
     }
 
     private static Sprite BuildWarmGlow()
@@ -1387,6 +1676,7 @@ public static class AmbientAtmosphere2D
     private static Sprite dayPillarSprite;
     private static Sprite crystalSprite;
     private static Sprite sunflowerSprite;
+    private static Sprite snowPineSprite;
     private static Sprite abyssMistSprite;
     private static Sprite dayAbyssMistSprite;
     private static Material particleMat;
@@ -1403,29 +1693,29 @@ public static class AmbientAtmosphere2D
         ParallaxBackdrop2D backdrop = backdropObj.AddComponent<ParallaxBackdrop2D>();
         backdrop.ConfigureTheme(StageVisualTheme.NightRuins);
 
-        // 2. Pilares antigos de fundo (profundidade arquitetônica estilo Duck Souls)
-        float[] pillarXs = { -5.2f, 10.0f, 24.5f, 37.5f, 54.0f, 67.5f, 82.5f };
+        // 2. Torres/pilares antigos de fundo fincados diretamente no solo (profundidade arquitetônica)
+        float[] pillarXs = { -5.2f, 11.5f, 24.5f, 37.5f, 54.0f, 72.5f, 82.5f };
         foreach (float px in pillarXs)
         {
-            CreateProp($"BgPillar_{px:F0}", levelRoot, new Vector3(px, groundTopY + 2.2f, 0f), pillarSprite, sortingOrder: -5, Color.white);
+            CreateProp($"BgPillar_{px:F0}", levelRoot, new Vector3(px, groundTopY + 1.82f, 0f), pillarSprite, sortingOrder: -5, Color.white);
         }
 
-        // 3. Tochas acesas ao longo da fase
+        // 3. Tochas acesas ao longo da fase (apoiadas diretamente no chão)
         float[] torchXs = { -3.5f, 5.5f, 14.5f, 23.8f, 34.5f, 42.8f, 54.8f, 62.8f, 71.2f, 79.8f };
         foreach (float tx in torchXs)
         {
             GameObject tObj = new GameObject($"WallTorch_{tx:F0}");
             tObj.transform.SetParent(levelRoot, false);
-            tObj.transform.position = new Vector3(tx, groundTopY + 0.85f, 0f);
+            tObj.transform.position = new Vector3(tx, groundTopY + 0.45f, 0f);
             TorchFlicker2D flicker = tObj.AddComponent<TorchFlicker2D>();
             flicker.EnsureBuilt();
         }
 
         // 4. Cristais luminosos estilo Celeste perto da plataforma segura e do portal
-        CreateProp("CrystalCluster_SafeL", levelRoot, new Vector3(35.3f, groundTopY + 0.45f, 0f), crystalSprite, sortingOrder: -2, new Color(0.65f, 0.98f, 1f, 1f));
-        CreateProp("CrystalCluster_SafeR", levelRoot, new Vector3(39.7f, groundTopY + 0.45f, 0f), crystalSprite, sortingOrder: -2, new Color(0.65f, 0.98f, 1f, 1f));
-        CreateProp("CrystalCluster_GoalL", levelRoot, new Vector3(80.6f, groundTopY + 0.45f, 0f), crystalSprite, sortingOrder: -2, new Color(0.55f, 1f, 0.82f, 1f));
-        CreateProp("CrystalCluster_GoalR", levelRoot, new Vector3(84.4f, groundTopY + 0.45f, 0f), crystalSprite, sortingOrder: -2, new Color(0.55f, 1f, 0.82f, 1f));
+        CreateProp("CrystalCluster_SafeL", levelRoot, new Vector3(35.3f, groundTopY + 0.44f, 0f), crystalSprite, sortingOrder: -2, new Color(0.65f, 0.98f, 1f, 1f));
+        CreateProp("CrystalCluster_SafeR", levelRoot, new Vector3(39.7f, groundTopY + 0.44f, 0f), crystalSprite, sortingOrder: -2, new Color(0.65f, 0.98f, 1f, 1f));
+        CreateProp("CrystalCluster_GoalL", levelRoot, new Vector3(80.6f, groundTopY + 0.44f, 0f), crystalSprite, sortingOrder: -2, new Color(0.55f, 1f, 0.82f, 1f));
+        CreateProp("CrystalCluster_GoalR", levelRoot, new Vector3(84.4f, groundTopY + 0.44f, 0f), crystalSprite, sortingOrder: -2, new Color(0.55f, 1f, 0.82f, 1f));
 
         // 5. Névoa no abismo entre Ground_Part1 e Ground_Part2
         SpawnAbyssMist(levelRoot, 48.6f, groundTopY, 8.5f, isDay: false);
@@ -1454,16 +1744,79 @@ public static class AmbientAtmosphere2D
         CreateAmbientParticles(levelRoot, isDay: true, spanWidth: Mathf.Max(125f, goalX + 25f));
     }
 
+    /// <summary>
+    /// Fundo da Fase 3 procedural (Montanhas Nevadas): parallax de picos nevados, aurora, neve caindo e cristais apoiados no portal.
+    /// </summary>
+    public static void PopulateProceduralNightDepth(Transform levelRoot, float groundTopY, float goalX, int seed = 0)
+    {
+        if (levelRoot == null) return;
+
+        EnsurePropSprites();
+
+        GameObject backdropObj = new GameObject("Parallax_Backdrop");
+        backdropObj.transform.SetParent(levelRoot, false);
+        ParallaxBackdrop2D backdrop = backdropObj.AddComponent<ParallaxBackdrop2D>();
+        backdrop.ConfigureTheme(StageVisualTheme.CrystalAbyss);
+
+        CreateScaledProp("CrystalCluster_GoalL", levelRoot, new Vector3(goalX - 1.9f, groundTopY, 0f), crystalSprite, -2, new Color(0.68f, 0.96f, 1f, 1f), 1.0f);
+        CreateScaledProp("CrystalCluster_GoalR", levelRoot, new Vector3(goalX + 1.9f, groundTopY, 0f), crystalSprite, -2, new Color(0.68f, 0.96f, 1f, 1f), 1.0f);
+
+        CreateAmbientParticles(levelRoot, isDay: false, spanWidth: Mathf.Max(125f, goalX + 25f), snow: true);
+    }
+
+    /// <summary>
+    /// Decoração apoiada na superfície da ilha. kind: 0 = pilar, 1 = tocha, 2 = cristal, 3 = pinheiro nevado.
+    /// </summary>
+    public static void SpawnNightPropOnIsland(Transform levelRoot, float x, float groundTopY, int kind, Color crystalTint)
+    {
+        EnsurePropSprites();
+        if (kind == 0)
+        {
+            CreateProp($"BgPillar_{x:F1}", levelRoot, new Vector3(x, groundTopY + 1.82f, 0f), pillarSprite, sortingOrder: -5, Color.white);
+        }
+        else if (kind == 1)
+        {
+            GameObject tObj = new GameObject($"WallTorch_{x:F1}");
+            tObj.transform.SetParent(levelRoot, false);
+            tObj.transform.position = new Vector3(x, groundTopY + 0.45f, 0f);
+            TorchFlicker2D flicker = tObj.AddComponent<TorchFlicker2D>();
+            flicker.EnsureBuilt();
+        }
+        else if (kind == 2)
+        {
+            CreateScaledProp($"Crystal_{x:F1}", levelRoot, new Vector3(x, groundTopY, 0f), crystalSprite, -2, crystalTint, 1.0f);
+        }
+        else
+        {
+            CreateProp($"SnowPine_{x:F1}", levelRoot, new Vector3(x, groundTopY + 1.24f, 0f), snowPineSprite, sortingOrder: -4, Color.white);
+        }
+    }
+
+    private static GameObject CreateScaledProp(string name, Transform parent, Vector3 basePos, Sprite sprite, int sortingOrder, Color tint, float scale)
+    {
+        if (sprite == null) return null;
+        GameObject obj = new GameObject(name);
+        obj.transform.SetParent(parent, false);
+        // basePos.y = superfície do chão; o sprite (0,88 u de altura, pivô central) cresce para cima a partir dela
+        obj.transform.position = new Vector3(basePos.x, basePos.y + 0.44f * scale, 0f);
+        obj.transform.localScale = new Vector3(scale, scale, 1f);
+        SpriteRenderer sr = obj.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.sortingOrder = sortingOrder;
+        sr.color = tint;
+        return obj;
+    }
+
     public static void SpawnDaylightPropOnIsland(Transform levelRoot, float x, float groundTopY, bool isPillar, bool isSunflower)
     {
         EnsurePropSprites();
         if (isPillar)
         {
-            CreateProp($"DayPillar_{x:F1}", levelRoot, new Vector3(x, groundTopY + 2.2f, 0f), dayPillarSprite, sortingOrder: -5, Color.white);
+            CreateProp($"DayPillar_{x:F1}", levelRoot, new Vector3(x, groundTopY + 1.82f, 0f), dayPillarSprite, sortingOrder: -5, Color.white);
         }
         if (isSunflower)
         {
-            CreateProp($"Sunflower_{x:F1}", levelRoot, new Vector3(x, groundTopY + 0.50f, 0f), sunflowerSprite, sortingOrder: -2, Color.white);
+            CreateProp($"Sunflower_{x:F1}", levelRoot, new Vector3(x, groundTopY + 0.44f, 0f), sunflowerSprite, sortingOrder: -2, Color.white);
         }
     }
 
@@ -1492,7 +1845,7 @@ public static class AmbientAtmosphere2D
         sr.color = tint;
     }
 
-    private static void CreateAmbientParticles(Transform parent, bool isDay, float spanWidth)
+    private static void CreateAmbientParticles(Transform parent, bool isDay, float spanWidth, bool snow = false)
     {
         if (particleMat == null)
         {
@@ -1503,7 +1856,7 @@ public static class AmbientAtmosphere2D
             }
         }
 
-        GameObject snowObj = new GameObject(isDay ? "Ambient_DaylightPollen" : "Ambient_CelesteSnow");
+        GameObject snowObj = new GameObject(snow ? "Ambient_AlpineSnow" : (isDay ? "Ambient_DaylightPollen" : "Ambient_CelesteSnow"));
         snowObj.transform.SetParent(parent, false);
         snowObj.transform.position = new Vector3(spanWidth * 0.4f, 3.5f, 0f);
 
@@ -1512,19 +1865,23 @@ public static class AmbientAtmosphere2D
         main.loop = true;
         main.startLifetime = new ParticleSystem.MinMaxCurve(6f, 10f);
         main.startSpeed = new ParticleSystem.MinMaxCurve(0.4f, 1.2f);
-        main.startSize = new ParticleSystem.MinMaxCurve(0.07f, 0.15f);
-        main.startColor = isDay
+        main.startSize = snow ? new ParticleSystem.MinMaxCurve(0.08f, 0.16f) : new ParticleSystem.MinMaxCurve(0.07f, 0.15f);
+        main.startColor = snow
+            ? new ParticleSystem.MinMaxGradient(
+                new Color(0.96f, 0.99f, 1.00f, 0.85f),
+                new Color(0.72f, 0.90f, 1.00f, 0.62f))
+            : (isDay
             ? new ParticleSystem.MinMaxGradient(
                 new Color(1.00f, 0.94f, 0.45f, 0.72f),
                 new Color(1.00f, 0.65f, 0.85f, 0.58f))
             : new ParticleSystem.MinMaxGradient(
                 new Color(0.75f, 0.88f, 1.0f, 0.55f),
-                new Color(0.50f, 0.78f, 0.96f, 0.30f));
-        main.maxParticles = 260;
+                new Color(0.50f, 0.78f, 0.96f, 0.30f)));
+        main.maxParticles = 280;
         main.simulationSpace = ParticleSystemSimulationSpace.World;
 
         var emission = ps.emission;
-        emission.rateOverTime = isDay ? 30f : 26f;
+        emission.rateOverTime = snow ? 36f : (isDay ? 30f : 26f);
 
         var shape = ps.shape;
         shape.shapeType = ParticleSystemShapeType.Box;
@@ -1532,8 +1889,8 @@ public static class AmbientAtmosphere2D
 
         var velocity = ps.velocityOverLifetime;
         velocity.enabled = true;
-        velocity.x = new ParticleSystem.MinMaxCurve(-0.6f, 0.2f);
-        velocity.y = new ParticleSystem.MinMaxCurve(-0.5f, -0.15f);
+        velocity.x = new ParticleSystem.MinMaxCurve(-0.7f, 0.2f);
+        velocity.y = snow ? new ParticleSystem.MinMaxCurve(-0.9f, -0.35f) : new ParticleSystem.MinMaxCurve(-0.5f, -0.15f);
         velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
 
         var renderer = ps.GetComponent<ParticleSystemRenderer>();
@@ -1550,8 +1907,81 @@ public static class AmbientAtmosphere2D
         if (dayPillarSprite == null) dayPillarSprite = BuildPillarSprite(isDay: true);
         if (crystalSprite == null) crystalSprite = BuildCrystalSprite();
         if (sunflowerSprite == null) sunflowerSprite = BuildSunflowerSprite();
+        if (snowPineSprite == null) snowPineSprite = BuildSnowPineSprite();
         if (abyssMistSprite == null) abyssMistSprite = BuildAbyssMistSprite(isDay: false);
         if (dayAbyssMistSprite == null) dayAbyssMistSprite = BuildAbyssMistSprite(isDay: true);
+    }
+
+    private static Sprite BuildSnowPineSprite()
+    {
+        const int w = 48;
+        const int h = 80;
+        Texture2D tex = PixelArtBuilder.CreateBlankTexture("SnowPine48x80", w, h);
+
+        Color trunk = new Color(0.24f, 0.16f, 0.14f, 1f);
+        Color leafDark = new Color(0.10f, 0.26f, 0.32f, 1f);
+        Color leafMid = new Color(0.16f, 0.38f, 0.44f, 1f);
+        Color snowShadow = new Color(0.68f, 0.85f, 0.96f, 1f);
+        Color snowTop = new Color(0.95f, 0.99f, 1.00f, 1f);
+        Color outline = new Color(0.06f, 0.12f, 0.20f, 1f);
+
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                int dx = Mathf.Abs(x - 24);
+                if (y < 14)
+                {
+                    if (dx <= 3) tex.SetPixel(x, y, (dx == 3 || y == 0) ? outline : trunk);
+                    else tex.SetPixel(x, y, Color.clear);
+                    continue;
+                }
+
+                // 3 camadas triangulares de pinheiro cobertas de neve
+                int halfW = -1;
+                bool isSnow = false;
+                if (y >= 12 && y <= 38)
+                {
+                    int localY = y - 12;
+                    halfW = 19 - (localY * 14) / 26;
+                    isSnow = (localY >= 19 || (localY >= 15 && dx <= halfW - 3));
+                }
+                if (y >= 32 && y <= 58)
+                {
+                    int localY = y - 32;
+                    int tierW = 15 - (localY * 11) / 26;
+                    if (tierW >= halfW)
+                    {
+                        halfW = tierW;
+                        isSnow = (localY >= 18 || (localY >= 14 && dx <= halfW - 2));
+                    }
+                }
+                if (y >= 52 && y <= 78)
+                {
+                    int localY = y - 52;
+                    int tierW = 11 - (localY * 10) / 26;
+                    if (tierW >= halfW)
+                    {
+                        halfW = tierW;
+                        isSnow = (localY >= 14 || (localY >= 10 && dx <= halfW - 1));
+                    }
+                }
+
+                if (halfW > 0 && dx <= halfW)
+                {
+                    if (dx == halfW || y == 78) tex.SetPixel(x, y, outline);
+                    else if (isSnow) tex.SetPixel(x, y, (x < 24 || y > 70) ? snowTop : snowShadow);
+                    else tex.SetPixel(x, y, (x < 24) ? leafMid : leafDark);
+                }
+                else
+                {
+                    tex.SetPixel(x, y, Color.clear);
+                }
+            }
+        }
+
+        tex.Apply();
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: false);
     }
 
     private static Sprite BuildPillarSprite(bool isDay)
@@ -1570,9 +2000,18 @@ public static class AmbientAtmosphere2D
         {
             for (int x = 0; x < w; x++)
             {
-                bool isCap = (y < 14 || y > h - 16);
-                int minX = isCap ? 3 : 7;
-                int maxX = isCap ? 28 : 24;
+                bool isBasePedestal = (y < 22);
+                bool isCrownBand = (y >= h - 20 && y < h - 8);
+                bool isBattlementMerlon = (y >= h - 8) && ((x >= 4 && x <= 9) || (x >= 13 && x <= 18) || (x >= 22 && x <= 27));
+
+                if (y >= h - 8 && !isBattlementMerlon)
+                {
+                    tex.SetPixel(x, y, Color.clear);
+                    continue;
+                }
+
+                int minX = isBasePedestal ? 2 : ((isCrownBand || isBattlementMerlon) ? 4 : 6);
+                int maxX = isBasePedestal ? 29 : ((isCrownBand || isBattlementMerlon) ? 27 : 25);
 
                 if (x < minX || x > maxX)
                 {
@@ -1580,7 +2019,7 @@ public static class AmbientAtmosphere2D
                     continue;
                 }
 
-                if (x == minX || x == maxX || y == 0 || y == h - 1 || y == 14 || y == h - 16)
+                if (x == minX || x == maxX || y == 0 || y == h - 1 || y == 22 || y == h - 20 || y == h - 9)
                 {
                     tex.SetPixel(x, y, outline);
                 }
@@ -1605,7 +2044,7 @@ public static class AmbientAtmosphere2D
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: false);
     }
 
     private static Sprite BuildSunflowerSprite()
@@ -1655,7 +2094,7 @@ public static class AmbientAtmosphere2D
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 32f);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: false);
     }
 
     private static Sprite BuildCrystalSprite()
@@ -1701,7 +2140,7 @@ public static class AmbientAtmosphere2D
         }
 
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 32f);
+        return PixelArtBuilder.CreateSprite64FromTexture(tex, 32f, seamlessTile: false);
     }
 
     private static Sprite BuildAbyssMistSprite(bool isDay)
